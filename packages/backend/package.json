@@ -1,0 +1,21 @@
+{
+  "name": "backend",
+  "version": "0.1.0",
+  "description": "StarterKit plugin for Caido",
+  "author": "Caido Labs Inc. <dev@caido.io>",
+  "license": "CC0-1.0",
+  "type": "module",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@caido/sdk-backend": "0.44.1",
+    "@types/node": "^22.10.1",
+    "shared": "workspace:*"
+  }
+}

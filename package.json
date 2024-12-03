@@ -1,0 +1,18 @@
+{
+  "name": "starterkit-plugin",
+  "version": "0.1.0",
+  "description": "StarterKit plugin for Caido",
+  "author": "Caido Labs Inc. <dev@caido.io>",
+  "license": "CC0-1.0",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/clean.js && pnpm -r build && node scripts/pack.js",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@caido/plugin-manifest": "0.2.0",
+    "jszip": "3.10.1",
+    "typescript": "5.7.2",
+    "vite": "6.0.2"
+  }
+}

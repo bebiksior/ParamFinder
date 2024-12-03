@@ -1,0 +1,34 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "description": "StarterKit plugin for Caido",
+  "author": "Caido Labs Inc. <dev@caido.io>",
+  "license": "CC0-1.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@caido/sdk-frontend": "0.44.1",
+    "@emotion/react": "^11.13.5",
+    "@emotion/styled": "^11.13.5",
+    "@mui/icons-material": "^6.1.9",
+    "@mui/material": "^6.1.9",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "allotment": "^1.20.2",
+    "caido-material-ui": "^1.0.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@caido/sdk-backend": "0.44.1",
+    "@types/node": "^22.10.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "backend": "workspace:*",
+    "shared": "workspace:*",
+    "tailwindcss": "^3.4.15",
+    "vite": "6.0.2"
+  }
+}

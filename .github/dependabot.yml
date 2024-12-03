@@ -1,0 +1,36 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-name: "@caido/plugin-manifest"
+      - dependency-name: "@caido/sdk-frontend"
+      - dependency-name: "@caido/sdk-backend"
+  
+  - package-ecosystem: "npm"
+    directory: "/packages/frontend" 
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-name: "@caido/plugin-manifest"
+      - dependency-name: "@caido/sdk-frontend"
+      - dependency-name: "@caido/sdk-backend"
+  
+  - package-ecosystem: "npm"
+    directory: "/packages/backend" 
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-name: "@caido/plugin-manifest"
+      - dependency-name: "@caido/sdk-frontend"
+      - dependency-name: "@caido/sdk-backend"
+
+  automerge: 
+    enabled: true
+    match:
+      - dependency-type: "all"
+        update-type: "patch"
+      - dependency-type: "all"
+        update-type: "minor"
