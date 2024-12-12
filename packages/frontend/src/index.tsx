@@ -1,8 +1,15 @@
-import { createRoot } from 'react-dom/client';
+import { createRoot } from "react-dom/client";
 import { CaidoSDK } from "./types";
-import { App } from "@/App";
+import { CommandContext } from "@caido/sdk-frontend/src/types";
+import App from "./App";
+import { setSDK } from "./stores/sdkStore";
+import { setupEvents } from "./events";
+import { ParamLocation } from "shared";
 
-export const init = (sdk: CaidoSDK) => {
+/**
+ * Sets up React UI and returns root element
+ */
+function setupUI(sdk: CaidoSDK) {
   const rootElement = document.createElement("div");
   Object.assign(rootElement.style, {
     height: "100%",
@@ -12,11 +19,65 @@ export const init = (sdk: CaidoSDK) => {
   const root = createRoot(rootElement);
   root.render(<App />);
 
-  sdk.navigation.addPage("/example", {
+  return rootElement;
+}
+/**
+ * Registers commands and menu items
+ */
+function setupCommands(sdk: CaidoSDK) {
+  const paramsLocations = ["query", "body", "headers"] as ParamLocation[];
+
+  paramsLocations.forEach((paramsLocation) => {
+    const commandId = `paramfinder:start-${paramsLocation}`;
+    const displayName = `Param Finder (${paramsLocation.toUpperCase()})`;
+
+    sdk.commands.register(commandId, {
+      name: displayName,
+      run: async (context: CommandContext) => {
+        if (context.type === "RequestRowContext") {
+          sdk.navigation.goTo("/paramfinder");
+          const requests = context.requests.slice(0, 25);
+
+          for (const req of requests) {
+            const request = await sdk.backend.getRequest(req.id);
+
+            sdk.backend.startMining(request, {
+              paramsLocation,
+            });
+          }
+        }
+      },
+    });
+
+    sdk.menu.registerItem({
+      type: "RequestRow",
+      commandId,
+      leadingIcon: "fas fa-search",
+    });
+  });
+}
+
+/**
+ * Configures navigation and sidebar
+ */
+function setupNavigation(sdk: CaidoSDK, rootElement: HTMLDivElement) {
+  sdk.navigation.addPage("/paramfinder", {
     body: rootElement,
   });
 
-  sdk.sidebar.registerItem("Example", "/example", {
-    icon: "fas fa-palette",
+  sdk.sidebar.registerItem("Param Finder", "/paramfinder", {
+    icon: "fas fa-search",
   });
+}
+
+/**
+ * Initializes the plugin
+ */
+export const init = (sdk: CaidoSDK) => {
+  setSDK(sdk);
+  setupEvents(sdk);
+
+  const rootElement = setupUI(sdk);
+  setupCommands(sdk);
+  setupNavigation(sdk, rootElement);
 };

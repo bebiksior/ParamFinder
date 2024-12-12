@@ -1,28 +1,28 @@
 {
-  "id": "starterkit-plugin",
-  "name": "StarterKit Plugin",
+  "id": "paramfinder-plugin",
+  "name": "ParamFinder",
   "version": "0.1.0",
-  "description": "This is a starterkit plugin",
+  "description": "Discover hidden parameters.",
   "author": {
-    "name": "Caido Labs Inc.",
-    "email": "dev@caido.io",
-    "url": "https://github.com/caido/starterkit-plugin"
+    "name": "bebiks",
+    "email": "bebiks@cvssadvisor.com",
+    "url": "https://github.com/bebiksior/ParamFinder"
   },
   "plugins": [
     {
       "kind": "frontend",
-      "id": "caido-extra-commands",
-      "name": "Extra Commands",
+      "id": "paramfinder-frontend",
+      "name": "ParamFinder: Frontend",
       "entrypoint": "frontend/script.js",
       "style": "frontend/frontend.css",
       "backend": {
-        "id": "caido-extra-commands-backend"
+        "id": "paramfinder-backend"
       }
     },
     {
       "kind": "backend",
-      "id": "caido-extra-commands-backend",
-      "name": "Extra Commands Backend",
+      "id": "paramfinder-backend",
+      "name": "ParamFinder: Backend",
       "runtime": "javascript",
       "entrypoint": "backend/script.js"
     }
