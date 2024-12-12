@@ -13,3 +13,9 @@ Discover hidden parameters straight from Caido!
 3. Go to the Plugins page in your Caido
 4. Click 'Install Package' and select downloaded `plugin_package.zip` file.
 5. Done :D
+
+## Roadmap to 1.0.0
+- [ ] Rework of backend code for discovering parameters
+- [ ] Additional customization features and options
+- [ ] Auto-detection of maximum URL size
+- [ ] Performance mode where UI only stores and displays findings (ignores requests)
