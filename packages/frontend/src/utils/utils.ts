@@ -1,9 +1,9 @@
-import { CaidoSDK } from "@/types";
+import { FrontendSDK } from "@/types";
 import { Result } from "shared";
 
 export async function handleBackendCall<T>(
   promise: Promise<Result<T>>,
-  sdk: CaidoSDK
+  sdk: FrontendSDK
 ) {
   const result = await promise;
 

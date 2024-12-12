@@ -11,10 +11,12 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      "@": resolve(__dirname, "src"),
-      events: "events",
-    },
+    alias: [
+      {
+        find: "@",
+        replacement: resolve(__dirname, "src"),
+      },
+    ],
   },
   build: {
     lib: {

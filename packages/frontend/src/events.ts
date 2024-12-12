@@ -1,9 +1,9 @@
 import { Finding, Parameter } from "shared";
 import { MiningSessionState, RequestResponse } from "shared";
-import { CaidoSDK } from "./types";
+import { FrontendSDK } from "./types";
 import { miningSessionStore } from "./stores/sessionsStore";
 
-export function setupEvents(sdk: CaidoSDK) {
+export function setupEvents(sdk: FrontendSDK) {
   const { newSession, updateSessionState, addRequestResponse, addFinding, addLog } =
     miningSessionStore;
 

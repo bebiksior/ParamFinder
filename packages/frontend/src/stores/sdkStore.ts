@@ -1,13 +1,13 @@
-import type { CaidoSDK } from "@/types";
+import type { FrontendSDK } from "@/types";
 import { atom } from "nanostores";
 
-export const $sdk = atom<CaidoSDK | null>(null);
+export const $sdk = atom<FrontendSDK | null>(null);
 
-export const setSDK = (sdk: CaidoSDK) => {
+export const setSDK = (sdk: FrontendSDK) => {
   $sdk.set(sdk);
 };
 
-export const getSDK = (): CaidoSDK => {
+export const getSDK = (): FrontendSDK => {
   const sdk = $sdk.get();
   if (!sdk) {
     throw new Error("SDK is not initialized!");

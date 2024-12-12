@@ -2,7 +2,6 @@ import { DefineEvents, SDK } from "caido:plugin";
 import {
   Finding,
   MiningSessionState,
-  Parameter,
   RequestResponse,
 } from "shared";
 

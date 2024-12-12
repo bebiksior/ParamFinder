@@ -1,4 +1,4 @@
-import { CaidoSDK } from "@/types";
+import { FrontendSDK } from "@/types";
 import { handleBackendCall } from "@/utils/utils";
 import { createNanoEvents, Emitter } from "nanoevents";
 
@@ -10,7 +10,7 @@ interface UploadEvents {
 
 const CHUNK_SIZE = 10000;
 
-export async function uploadWordlist(sdk: CaidoSDK, data: {
+export async function uploadWordlist(sdk: FrontendSDK, data: {
   content: string;
   filename: string;
 }): Promise<Emitter<UploadEvents>> {

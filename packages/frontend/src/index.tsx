@@ -1,16 +1,18 @@
 import { createRoot } from "react-dom/client";
-import { CaidoSDK } from "./types";
-import { CommandContext } from "@caido/sdk-frontend/src/types";
+import { FrontendSDK } from "./types";
 import App from "./App";
 import { setSDK } from "./stores/sdkStore";
 import { setupEvents } from "./events";
 import { ParamLocation } from "shared";
 import { handleBackendCall } from "./utils/utils";
+import { Caido } from "@caido/sdk-frontend";
+import { API, BackendEvents } from "backend";
+import { CommandContext } from "@caido/sdk-frontend/src/types";
 
 /**
  * Sets up React UI and returns root element
  */
-function setupUI(sdk: CaidoSDK) {
+function setupUI(sdk: FrontendSDK) {
   const rootElement = document.createElement("div");
   Object.assign(rootElement.style, {
     height: "100%",
@@ -25,7 +27,7 @@ function setupUI(sdk: CaidoSDK) {
 /**
  * Registers commands and menu items
  */
-function setupCommands(sdk: CaidoSDK) {
+function setupCommands(sdk: FrontendSDK) {
   const paramsLocations = ["query", "body", "headers"] as ParamLocation[];
 
   paramsLocations.forEach((paramsLocation) => {
@@ -61,7 +63,7 @@ function setupCommands(sdk: CaidoSDK) {
 /**
  * Configures navigation and sidebar
  */
-function setupNavigation(sdk: CaidoSDK, rootElement: HTMLDivElement) {
+function setupNavigation(sdk: FrontendSDK, rootElement: HTMLDivElement) {
   sdk.navigation.addPage("/paramfinder", {
     body: rootElement,
   });
@@ -74,7 +76,7 @@ function setupNavigation(sdk: CaidoSDK, rootElement: HTMLDivElement) {
 /**
  * Initializes the plugin
  */
-export const init = (sdk: CaidoSDK) => {
+export const init = (sdk: Caido<API, BackendEvents>) => {
   setSDK(sdk);
   setupEvents(sdk);
 

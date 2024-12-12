@@ -1,10 +1,10 @@
-import { randomString } from "@/helper/helper";
 import { SDK } from "caido:plugin";
 import {
   RequestSpec,
   RequestResponse as CaidoRequestResponse,
 } from "caido:utils";
 import { Request, Response, RequestResponse, RequestWithRaw } from "shared";
+import { randomString } from "../helper/helper";
 
 /**
  * Convert a Caido Request to our Request type

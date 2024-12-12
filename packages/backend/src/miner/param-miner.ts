@@ -15,10 +15,10 @@ import { EventEmitter } from "events";
 import { generateID, randomString, readWordlist } from "../helper/helper";
 import { SDK } from "caido:plugin";
 import { analyzeResponse, defineFactors } from "./anomaly";
-import { sendRequest } from "@/requests/requests";
 import { BackendEvents } from "../types/types";
 import { API } from "..";
-import { SettingsStore } from "@/settings/settings";
+import { SettingsStore } from "../settings/settings";
+import { sendRequest } from "../requests/requests";
 
 export class ParamMiner {
   private options: ParamMinerOptions;
