@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Settings } from "shared";
 import { getSDK } from "./sdkStore";
+import { handleBackendCall } from "@/utils/utils";
 
 const SETTINGS_QUERY_KEY = ["settings"];
 
@@ -10,7 +11,7 @@ export function useSettings() {
   return useQuery({
     queryKey: SETTINGS_QUERY_KEY,
     queryFn: async () => {
-      return await sdk.backend.getSettings();
+      return await handleBackendCall(sdk.backend.getSettings(), sdk);
     }
   });
 }
@@ -21,7 +22,7 @@ export function useUpdateSettings() {
 
   return useMutation({
     mutationFn: async (settings: Settings) => {
-      await sdk.backend.updateSettings(settings);
+      await handleBackendCall(sdk.backend.updateSettings(settings), sdk);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
@@ -34,7 +35,7 @@ export function useSettingsPath() {
   return useQuery({
     queryKey: ["settingsPath"],
     queryFn: async () => {
-      return await sdk.backend.getSettingsPath();
+      return await handleBackendCall(sdk.backend.getSettingsPath(), sdk);
     }
   });
 }

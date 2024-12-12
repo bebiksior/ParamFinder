@@ -2,9 +2,12 @@ import { defineConfig } from "vite";
 import { resolve } from "path";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "tailwindcss";
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), nodePolyfills({
+    protocolImports: true,
+  }),],
   css: {
     postcss: {
       plugins: [tailwindcss()],
@@ -13,6 +16,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "src"),
+
     },
   },
   build: {

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSDK } from "./sdkStore";
-
+import { handleBackendCall } from "@/utils/utils";
 const WORDLISTS_QUERY_KEY = ["wordlists"] as const;
 
 export function useWordlists() {
@@ -8,7 +8,7 @@ export function useWordlists() {
     queryKey: WORDLISTS_QUERY_KEY,
     queryFn: async () => {
       const sdk = getSDK();
-      return await sdk.backend.getWordlists();
+      return await handleBackendCall(sdk.backend.getWordlists(), sdk);
     },
   });
 }
@@ -19,7 +19,7 @@ export function useAddWordlist() {
   return useMutation({
     mutationFn: async (path: string) => {
       const sdk = getSDK();
-      await sdk.backend.addWordlistPath(path);
+      await handleBackendCall(sdk.backend.addWordlistPath(path), sdk);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: WORDLISTS_QUERY_KEY });
@@ -40,7 +40,7 @@ export function useToggleWordlist() {
   return useMutation({
     mutationFn: async ({ path, enabled }: { path: string; enabled: boolean }) => {
       const sdk = getSDK();
-      await sdk.backend.toggleWordlist(path, enabled);
+      await handleBackendCall(sdk.backend.toggleWordlist(path, enabled), sdk);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: WORDLISTS_QUERY_KEY });
@@ -54,7 +54,7 @@ export function useRemoveWordlist() {
   return useMutation({
     mutationFn: async (path: string) => {
       const sdk = getSDK();
-      await sdk.backend.removeWordlistPath(path);
+      await handleBackendCall(sdk.backend.removeWordlistPath(path), sdk);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: WORDLISTS_QUERY_KEY });
@@ -68,7 +68,7 @@ export function useClearWordlists() {
   return useMutation({
     mutationFn: async () => {
       const sdk = getSDK();
-      await sdk.backend.clearWordlists();
+      await handleBackendCall(sdk.backend.clearWordlists(), sdk);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: WORDLISTS_QUERY_KEY });

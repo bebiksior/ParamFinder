@@ -11,6 +11,7 @@ import { SessionStats } from "./SessionStats";
 import { SessionLogs } from "./SessionLogs";
 import { SessionResults } from "./SessionResults";
 import { computed } from "nanostores";
+import { handleBackendCall } from "@/utils/utils";
 
 export default function SessionInfo() {
   const sdk = getSDK();
@@ -46,19 +47,19 @@ export default function SessionInfo() {
 
   const handlePause = () => {
     if (activeSessionId) {
-      sdk.backend.pauseMining(activeSessionId);
+      handleBackendCall(sdk.backend.pauseMining(activeSessionId), sdk);
     }
   };
 
   const handleResume = () => {
     if (activeSessionId) {
-      sdk.backend.resumeMining(activeSessionId);
+      handleBackendCall(sdk.backend.resumeMining(activeSessionId), sdk);
     }
   };
 
   const handleCancel = () => {
     if (activeSessionId) {
-      sdk.backend.cancelMining(activeSessionId);
+      handleBackendCall(sdk.backend.cancelMining(activeSessionId), sdk);
     }
   };
 

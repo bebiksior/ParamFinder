@@ -36,6 +36,7 @@
     "backend": "workspace:*",
     "shared": "workspace:*",
     "tailwindcss": "^3.4.15",
-    "vite": "6.0.2"
+    "vite": "6.0.2",
+    "vite-plugin-node-polyfills": "^0.22.0"
   }
 }

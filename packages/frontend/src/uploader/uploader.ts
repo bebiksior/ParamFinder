@@ -1,4 +1,5 @@
 import { CaidoSDK } from "@/types";
+import { handleBackendCall } from "@/utils/utils";
 import { EventEmitter } from "events";
 
 const CHUNK_SIZE = 10000;
@@ -12,11 +13,11 @@ export async function uploadWordlist(sdk: CaidoSDK, data: {
 
     (async () => {
         try {
-            const sessionId = await sdk.backend.startWordlistUpload(data.filename, totalChunks);
+            const sessionId = await handleBackendCall(sdk.backend.startWordlistUpload(data.filename, totalChunks), sdk);
 
             for (let i = 0; i < totalChunks; i++) {
                 const chunk = data.content.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-                await sdk.backend.uploadWordlistChunk(sessionId, chunk, i);
+                await handleBackendCall(sdk.backend.uploadWordlistChunk(sessionId, chunk, i), sdk);
                 emitter.emit('progress', {
                     current: i + 1,
                     total: totalChunks,
@@ -24,7 +25,7 @@ export async function uploadWordlist(sdk: CaidoSDK, data: {
                 });
             }
 
-            await sdk.backend.finalizeWordlistUpload(sessionId);
+            await handleBackendCall(sdk.backend.finalizeWordlistUpload(sessionId), sdk);
             emitter.emit('complete');
         } catch (error) {
             emitter.emit('error', error);

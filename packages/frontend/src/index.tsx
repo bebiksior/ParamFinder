@@ -5,6 +5,7 @@ import App from "./App";
 import { setSDK } from "./stores/sdkStore";
 import { setupEvents } from "./events";
 import { ParamLocation } from "shared";
+import { handleBackendCall } from "./utils/utils";
 
 /**
  * Sets up React UI and returns root element
@@ -39,11 +40,11 @@ function setupCommands(sdk: CaidoSDK) {
           const requests = context.requests.slice(0, 25);
 
           for (const req of requests) {
-            const request = await sdk.backend.getRequest(req.id);
+            const request = await handleBackendCall(sdk.backend.getRequest(req.id), sdk);
 
-            sdk.backend.startMining(request, {
+            handleBackendCall(sdk.backend.startMining(request, {
               paramsLocation,
-            });
+            }), sdk);
           }
         }
       },
