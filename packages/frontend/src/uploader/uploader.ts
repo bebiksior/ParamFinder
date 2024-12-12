@@ -1,14 +1,20 @@
 import { CaidoSDK } from "@/types";
 import { handleBackendCall } from "@/utils/utils";
-import { EventEmitter } from "events";
+import { createNanoEvents, Emitter } from "nanoevents";
+
+interface UploadEvents {
+  progress: (data: { current: number; total: number; percentage: number }) => void;
+  complete: () => void;
+  error: (error: unknown) => void;
+}
 
 const CHUNK_SIZE = 10000;
 
 export async function uploadWordlist(sdk: CaidoSDK, data: {
   content: string;
   filename: string;
-}): Promise<EventEmitter> {
-    const emitter = new EventEmitter();
+}): Promise<Emitter<UploadEvents>> {
+    const emitter = createNanoEvents<UploadEvents>();
     const totalChunks = Math.ceil(data.content.length / CHUNK_SIZE);
 
     (async () => {
