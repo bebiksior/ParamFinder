@@ -27,17 +27,60 @@ import { uploadWordlist } from "@/uploader/uploader";
 
 const wordlistPresets = [
   {
-    name: "SecLists: raft-large-words",
+    name: "seclists/raft-large-words",
     url: "https://raw.githubusercontent.com/danielmiessler/SecLists/refs/heads/master/Discovery/Web-Content/raft-large-words.txt",
+    description: "Large wordlist from SecLists for web content discovery",
   },
   {
-    name: "SecLists: raft-medium-words",
+    name: "seclists/raft-medium-words",
     url: "https://raw.githubusercontent.com/danielmiessler/SecLists/refs/heads/master/Discovery/Web-Content/raft-medium-words.txt",
+    description: "Medium wordlist from SecLists for web content discovery",
   },
   {
-    name: "SecLists: raft-small-words",
+    name: "seclists/raft-small-words",
     url: "https://raw.githubusercontent.com/danielmiessler/SecLists/refs/heads/master/Discovery/Web-Content/raft-small-words.txt",
+    description: "Small wordlist from SecLists for web content discovery",
   },
+  {
+    name: "param-miner/words",
+    url: "https://raw.githubusercontent.com/PortSwigger/param-miner/master/resources/words",
+    description: "Common parameter names from ParamMiner",
+  },
+  {
+    name: "param-miner/wafparams",
+    url: "https://raw.githubusercontent.com/PortSwigger/param-miner/master/resources/wafparams",
+    description: "WAF bypass parameters from ParamMiner",
+  },
+  {
+    name: "param-miner/params",
+    url: "https://raw.githubusercontent.com/PortSwigger/param-miner/master/resources/params",
+    description: "General parameters from ParamMiner",
+  },
+  {
+    name: "param-miner/headers",
+    url: "https://raw.githubusercontent.com/PortSwigger/param-miner/master/resources/headers",
+    description: "HTTP header names from ParamMiner",
+  },
+  {
+    name: "param-miner/functions",
+    url: "https://raw.githubusercontent.com/PortSwigger/param-miner/master/resources/functions",
+    description: "Common function names from ParamMiner",
+  },
+  {
+    name: "param-miner/fierce-subdomains",
+    url: "https://raw.githubusercontent.com/PortSwigger/param-miner/master/resources/fierce-subdomains",
+    description: "Subdomain wordlist from ParamMiner",
+  },
+  {
+    name: "param-miner/boring_headers",
+    url: "https://raw.githubusercontent.com/PortSwigger/param-miner/master/resources/boring_headers",
+    description: "Common boring header names from ParamMiner",
+  },
+  {
+    name: "param-miner/assetnote-params",
+    url: "https://raw.githubusercontent.com/PortSwigger/param-miner/master/resources/assetnote-params",
+    description: "Parameter list from Assetnote via ParamMiner",
+  }
 ];
 
 export default function WordlistsPage() {
@@ -115,7 +158,7 @@ export default function WordlistsPage() {
   }
 
   return (
-    <StyledBox p={3}>
+    <StyledBox p={3} className="overflow-y-auto">
       <Box display="flex" flexDirection="column" gap={2} mb={3}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h4">Wordlists</Typography>
@@ -191,8 +234,7 @@ export default function WordlistsPage() {
             Preset Wordlists
           </Typography>
           <Typography variant="body2" color="text.secondary" paragraph>
-            Choose from popular SecLists wordlists to get started quickly. These
-            are commonly used for web content discovery.
+            Choose from popular wordlists to get started quickly.
           </Typography>
           <Box
             display="grid"
@@ -212,15 +254,14 @@ export default function WordlistsPage() {
                 }}
               >
                 <Typography variant="subtitle1" fontWeight="medium">
-                  {preset.name.replace("SecLists: ", "")}
+                  {preset.name}
                 </Typography>
                 <Typography
                   variant="body2"
                   color="text.secondary"
                   sx={{ flexGrow: 1 }}
                 >
-                  From SecLists repository - a collection of multiple types of
-                  lists used during security assessments.
+                  {preset.description}
                 </Typography>
                 <Button
                   variant="outlined"
