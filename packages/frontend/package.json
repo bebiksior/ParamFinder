@@ -24,6 +24,7 @@
     "@types/react-window": "^1.8.8",
     "allotment": "^1.20.2",
     "caido-material-ui": "^1.0.3",
+    "events": "^3.3.0",
     "nanostores": "^0.11.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

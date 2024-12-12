@@ -78,6 +78,9 @@ importers:
       caido-material-ui:
         specifier: ^1.0.3
         version: 1.0.3(@types/react@18.3.12)
+      events:
+        specifier: ^3.3.0
+        version: 3.3.0
       nanostores:
         specifier: ^0.11.3
         version: 0.11.3
