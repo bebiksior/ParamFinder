@@ -76,8 +76,8 @@ importers:
         specifier: ^1.20.2
         version: 1.20.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       caido-material-ui:
-        specifier: ^1.0.2
-        version: 1.0.2(@types/react@18.3.12)
+        specifier: ^1.0.3
+        version: 1.0.3(@types/react@18.3.12)
       nanostores:
         specifier: ^0.11.3
         version: 0.11.3
@@ -812,8 +812,8 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
 
-  caido-material-ui@1.0.2:
-    resolution: {integrity: sha512-ZlmMzdUgKoNykkkCQMdtJpq4krWkJypjy5+eV2HrsMHssIyK3y1X4XLZhFjBtH4EH+WTn5q3+qsIw9GCmdBE9g==}
+  caido-material-ui@1.0.3:
+    resolution: {integrity: sha512-6opYhjXKilvvjXNAn7jaT2EdG5zpwK75iX0mZ85BdD1eNcEOa9PGggrVWLvjxylyFXwqbw2+NPBnxUvmGX24TQ==}
 
   callsites@3.1.0:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
@@ -2154,12 +2154,13 @@ snapshots:
       node-releases: 2.0.18
       update-browserslist-db: 1.1.1(browserslist@4.24.0)
 
-  caido-material-ui@1.0.2(@types/react@18.3.12):
+  caido-material-ui@1.0.3(@types/react@18.3.12):
     dependencies:
       '@emotion/react': 11.13.5(@types/react@18.3.12)(react@18.3.1)
       '@emotion/styled': 11.13.5(@emotion/react@11.13.5(@types/react@18.3.12)(react@18.3.1))(@types/react@18.3.12)(react@18.3.1)
       '@mui/icons-material': 6.1.9(@mui/material@6.1.9(@emotion/react@11.13.5(@types/react@18.3.12)(react@18.3.1))(@emotion/styled@11.13.5(@emotion/react@11.13.5(@types/react@18.3.12)(react@18.3.1))(@types/react@18.3.12)(react@18.3.1))(@types/react@18.3.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@18.3.12)(react@18.3.1)
       '@mui/material': 6.1.9(@emotion/react@11.13.5(@types/react@18.3.12)(react@18.3.1))(@emotion/styled@11.13.5(@emotion/react@11.13.5(@types/react@18.3.12)(react@18.3.1))(@types/react@18.3.12)(react@18.3.1))(@types/react@18.3.12)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@mui/system': 6.1.9(@emotion/react@11.13.5(@types/react@18.3.12)(react@18.3.1))(@emotion/styled@11.13.5(@emotion/react@11.13.5(@types/react@18.3.12)(react@18.3.1))(@types/react@18.3.12)(react@18.3.1))(@types/react@18.3.12)(react@18.3.1)
       allotment: 1.20.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
