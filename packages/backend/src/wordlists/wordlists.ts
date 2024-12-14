@@ -1,7 +1,7 @@
 import { SDK } from "caido:plugin";
 import { Wordlist } from "shared";
 import { Database } from "sqlite";
-import { deleteFile } from "../helper/helper";
+import { deleteFile } from "../util/helper";
 
 class WordlistManager {
   private sdk: SDK;

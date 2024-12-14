@@ -4,7 +4,7 @@ import {
   RequestResponse as CaidoRequestResponse,
 } from "caido:utils";
 import { Request, Response, RequestResponse, RequestWithRaw } from "shared";
-import { randomString } from "../helper/helper";
+import { randomString } from "../util/helper";
 
 /**
  * Convert a Caido Request to our Request type

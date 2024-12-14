@@ -12,7 +12,7 @@ import {
 } from "shared";
 
 import { EventEmitter } from "events";
-import { generateID, randomString, readWordlist } from "../helper/helper";
+import { generateID, randomString, readWordlist } from "../util/helper";
 import { SDK } from "caido:plugin";
 import { analyzeResponse, defineFactors } from "./anomaly";
 import { BackendEvents } from "../types/types";

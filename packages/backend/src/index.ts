@@ -3,7 +3,7 @@ import { ParamMiner } from "./miner/param-miner";
 import { ParamMinerOptions, Request, Settings, Wordlist } from "shared";
 import { BackendEvents } from "./types/types";
 import WordlistManager from "./wordlists/wordlists";
-import { writeToFile } from "./helper/helper";
+import { writeToFile } from "./util/helper";
 import { startUploadSession, uploadChunk, finalizeUpload, cancelUpload } from "./wordlists/uploader";
 import { SettingsStore } from "./settings/settings";
 import { Result, ok, error } from "shared";

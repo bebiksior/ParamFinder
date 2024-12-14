@@ -1,6 +1,6 @@
 import { SDK } from "caido:plugin";
-import { writeToFile } from "../helper/helper";
-import { generateID } from "../helper/helper";
+import { writeToFile } from "../util/helper";
+import { generateID } from "../util/helper";
 
 interface UploadSession {
   id: string;
