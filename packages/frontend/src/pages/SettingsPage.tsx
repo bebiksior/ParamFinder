@@ -23,7 +23,7 @@ import { getSDK } from "@/stores/sdkStore";
 
 export default function SettingsPage() {
   const sdk = getSDK();
-  const { data: settings, isLoading } = useSettings();
+  const { data: settings } = useSettings();
   const { mutate: updateSettings } = useUpdateSettings();
   const { data: settingsPath } = useSettingsPath();
   const [localSettings, setLocalSettings] = useState(settings);
@@ -79,16 +79,6 @@ export default function SettingsPage() {
     return () => clearTimeout(timeoutId);
   }, [localSettings, settings, debouncedSave]);
 
-  if (isLoading) {
-    return (
-      <StyledBox maxWidth="lg">
-        <Box py={4}>
-          <Typography variant="h4">Loading settings...</Typography>
-        </Box>
-      </StyledBox>
-    );
-  }
-
   return (
     <StyledBox padding={2} className="overflow-y-auto">
       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
@@ -115,7 +105,7 @@ export default function SettingsPage() {
           <TextField
             label="Request Delay (ms)"
             type="number"
-            value={localSettings?.delay || ""}
+            value={localSettings?.delay ?? ""}
             onChange={(e) =>
               setLocalSettings({
                 ...localSettings!,
@@ -123,11 +113,12 @@ export default function SettingsPage() {
               })
             }
             fullWidth
+            InputLabelProps={{ shrink: true }}
           />
           <TextField
             label="Concurrency"
             type="number"
-            value={localSettings?.concurrency || ""}
+            value={localSettings?.concurrency ?? ""}
             onChange={(e) =>
               setLocalSettings({
                 ...localSettings!,
@@ -137,11 +128,12 @@ export default function SettingsPage() {
             fullWidth
             disabled
             helperText="Concurrency is not implemented yet"
+            InputLabelProps={{ shrink: true }}
           />
           <TextField
             label="Request Timeout (ms)"
             type="number"
-            value={localSettings?.timeout || ""}
+            value={localSettings?.timeout ?? ""}
             onChange={(e) =>
               setLocalSettings({
                 ...localSettings!,
@@ -149,11 +141,12 @@ export default function SettingsPage() {
               })
             }
             fullWidth
+            InputLabelProps={{ shrink: true }}
           />
           <FormControlLabel
             control={
               <Switch
-                checked={localSettings?.autoDetectMaxSize}
+                checked={localSettings?.autoDetectMaxSize ?? false}
                 onChange={(e) =>
                   setLocalSettings({
                     ...localSettings!,
@@ -172,7 +165,7 @@ export default function SettingsPage() {
               <TextField
                 label="Max Request Size"
                 type="number"
-                value={localSettings?.maxQuerySize || ""}
+                value={localSettings?.maxQuerySize ?? ""}
                 onChange={(e) =>
                   setLocalSettings({
                     ...localSettings!,
@@ -180,11 +173,12 @@ export default function SettingsPage() {
                   })
                 }
                 fullWidth
+                InputLabelProps={{ shrink: true }}
               />
               <TextField
                 label="Max Header Size"
                 type="number"
-                value={localSettings?.maxHeaderSize || ""}
+                value={localSettings?.maxHeaderSize ?? ""}
                 onChange={(e) =>
                   setLocalSettings({
                     ...localSettings!,
@@ -192,11 +186,12 @@ export default function SettingsPage() {
                   })
                 }
                 fullWidth
+                InputLabelProps={{ shrink: true }}
               />
               <TextField
                 label="Max Body Size"
                 type="number"
-                value={localSettings?.maxBodySize || ""}
+                value={localSettings?.maxBodySize ?? ""}
                 onChange={(e) =>
                   setLocalSettings({
                     ...localSettings!,
@@ -204,13 +199,14 @@ export default function SettingsPage() {
                   })
                 }
                 fullWidth
+                InputLabelProps={{ shrink: true }}
               />
             </>
           )}
           <FormControlLabel
             control={
               <Switch
-                checked={localSettings?.performanceMode}
+                checked={localSettings?.performanceMode ?? false}
                 onChange={(e) =>
                   setLocalSettings({
                     ...localSettings!,
@@ -224,7 +220,7 @@ export default function SettingsPage() {
           <TextField
             label="Learn Requests Count"
             type="number"
-            value={localSettings?.learnRequestsCount || ""}
+            value={localSettings?.learnRequestsCount ?? ""}
             onChange={(e) =>
               setLocalSettings({
                 ...localSettings!,
@@ -233,6 +229,7 @@ export default function SettingsPage() {
             }
             helperText="Minimum value is 3. Recommended value is 8 or more."
             fullWidth
+            InputLabelProps={{ shrink: true }}
           />
         </Stack>
       </Paper>
