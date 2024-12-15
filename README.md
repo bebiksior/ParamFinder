@@ -15,7 +15,8 @@ Discover hidden parameters straight from Caido!
 5. Done :D
 
 ## Roadmap to 1.0.0
-- [ ] Rework of backend code for discovering parameters
+- [x] Rework of backend code for discovering parameters
 - [ ] Additional customization features and options
-- [ ] Auto-detection of maximum URL size
-- [ ] Performance mode where UI only stores and displays findings (ignores requests)
+- [x] Auto-detection of maximum URL size
+- [x] Performance mode where UI only stores and displays findings (ignores requests)
+- [ ] Concurrency
