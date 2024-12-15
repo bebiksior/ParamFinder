@@ -165,12 +165,12 @@ export default function SettingsPage() {
                 }
               />
             }
-            label="Auto Detect Max URL Size"
+            label="Auto Detect Max Request Size"
           />
           {!localSettings?.autoDetectMaxSize && (
             <>
               <TextField
-                label="Max URL Size"
+                label="Max Request Size"
                 type="number"
                 value={localSettings?.maxQuerySize || ""}
                 onChange={(e) =>

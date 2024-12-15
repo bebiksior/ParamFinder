@@ -120,7 +120,7 @@ export class ParamMiner {
     }
 
     if (this.config.maxSize && this.config.maxSize < 0) {
-      throw new Error("Max URL size must be greater than 0");
+      throw new Error("Max Request size must be greater than 0");
     }
 
     if (this.config.maxSize && this.config.autoDetectMaxSize) {
