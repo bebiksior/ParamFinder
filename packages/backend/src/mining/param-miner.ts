@@ -9,6 +9,7 @@ import { EventEmitter } from "events";
 import { ParamDiscovery } from "./discovery";
 import { CaidoBackendSDK } from "../types/types";
 import { generateID } from "../util/helper";
+import { checkForWAF } from "./features/waf-check";
 
 export class ParamMiner {
   public sdk: CaidoBackendSDK;
@@ -86,6 +87,15 @@ export class ParamMiner {
         "logs",
         `Max ${this.config.attackType} size: ${this.config.maxSize}`
       );
+    }
+
+    if (this.config.wafDetection) {
+      this.eventEmitter.emit("logs", "Checking for WAF...");
+      const wafResponse = await checkForWAF(this);
+      if (wafResponse) {
+        this.eventEmitter.emit("logs", "WAF detected");
+        this.anomalyDetector.setWafResponse(wafResponse);
+      }
     }
 
     const words = this.extractWordsFromResponse(

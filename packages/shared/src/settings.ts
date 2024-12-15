@@ -8,4 +8,5 @@ export type Settings = {
   maxBodySize?: number;
   performanceMode: boolean;
   learnRequestsCount: number;
+  wafDetection: boolean;
 };

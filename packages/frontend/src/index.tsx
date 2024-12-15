@@ -71,6 +71,7 @@ function setupCommands(sdk: FrontendSDK) {
               maxQuerySize: settings.maxQuerySize,
               maxHeaderSize: settings.maxHeaderSize,
               maxBodySize: settings.maxBodySize,
+              wafDetection: settings.wafDetection,
             }), sdk);
           }
         }

@@ -206,6 +206,20 @@ export default function SettingsPage() {
           <FormControlLabel
             control={
               <Switch
+                checked={localSettings?.wafDetection ?? false}
+                onChange={(e) =>
+                  setLocalSettings({
+                    ...localSettings!,
+                    wafDetection: e.target.checked,
+                  })
+                }
+              />
+            }
+            label="WAF Detection"
+          />
+          <FormControlLabel
+            control={
+              <Switch
                 checked={localSettings?.performanceMode ?? false}
                 onChange={(e) =>
                   setLocalSettings({

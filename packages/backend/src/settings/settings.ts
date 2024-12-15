@@ -17,6 +17,7 @@ export class SettingsStore {
       autoDetectMaxSize: true,
       performanceMode: false,
       learnRequestsCount: 8,
+      wafDetection: true,
     };
     this.sdk = sdk;
 

@@ -31,4 +31,5 @@ export type ParamMinerConfig = {
   delayBetweenRequests: number;
   concurrency: number;
   performanceMode: boolean;
+  wafDetection: boolean;
 };

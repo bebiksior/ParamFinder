@@ -1,7 +1,12 @@
-import { MiningSessionState, Parameter, RequestResponse, Response } from "shared";
+import {
+  MiningSessionState,
+  Parameter,
+  RequestResponse,
+  Response,
+} from "shared";
 import { Anomaly, AnomalyType, StableFactors } from "shared";
 import { DiffingSystem } from "../util/diffing";
-import { randomString } from "../util/helper";
+import { getStringSimilarity, randomString } from "../util/helper";
 import { ParamMiner } from "./param-miner";
 
 export class AnomalyDetector {
@@ -9,6 +14,7 @@ export class AnomalyDetector {
   public initialRequestResponse: RequestResponse | undefined;
   private paramMiner: ParamMiner;
   private differ: DiffingSystem | undefined;
+  private wafResponse: Response | null = null;
 
   constructor(paramMiner: ParamMiner) {
     this.paramMiner = paramMiner;
@@ -23,6 +29,15 @@ export class AnomalyDetector {
     }
 
     const responseBody = response.body || "";
+
+    if (this.wafResponse) {
+      if (
+        this.wafResponse.status === response.status &&
+        getStringSimilarity(this.wafResponse.body, responseBody) > 0.95
+      ) {
+        return undefined;
+      }
+    }
 
     // Check if status code is stable
     if (
@@ -39,7 +54,10 @@ export class AnomalyDetector {
 
     // Check if redirect is stable
     if (this.stableFactors.redirect) {
-      if (response.headers["Location"] && response.headers["Location"][0] !== this.stableFactors.redirect) {
+      if (
+        response.headers["Location"] &&
+        response.headers["Location"][0] !== this.stableFactors.redirect
+      ) {
         return {
           type: AnomalyType.Redirect,
           from: this.stableFactors.redirect,
@@ -138,11 +156,7 @@ export class AnomalyDetector {
           "learning"
         );
 
-      this.paramMiner.eventEmitter.emit(
-        "responseReceived",
-        0,
-        requestResponse
-      );
+      this.paramMiner.eventEmitter.emit("responseReceived", 0, requestResponse);
 
       learnResponses.push({
         requestResponse,
@@ -252,8 +266,7 @@ export class AnomalyDetector {
 
     for (const param of parameters) {
       if (responseBody.includes(param.value)) {
-        stable.reflectionsCount =
-          responseBody.split(param.value).length - 1;
+        stable.reflectionsCount = responseBody.split(param.value).length - 1;
       }
     }
 
@@ -292,5 +305,13 @@ export class AnomalyDetector {
     }
 
     return stable;
+  }
+
+  public setWafResponse(response: Response) {
+    this.wafResponse = response;
+  }
+
+  public getWafResponse() {
+    return this.wafResponse;
   }
 }

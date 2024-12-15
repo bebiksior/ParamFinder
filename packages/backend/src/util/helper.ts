@@ -28,8 +28,7 @@ function cleanupWordlist(wordlist: string[]) {
 /* random string generator */
 export function randomString(length: number) {
   let result = "";
-  const characters =
-    "abcdefghijklmnopqrstuvwxyz0123456789";
+  const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
   const charactersLength = characters.length;
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
@@ -98,5 +97,49 @@ export function uint8ArrayToString(uint8Array: Uint8Array) {
     chunks.push(String.fromCharCode.apply(null, Array.from(chunk)));
   }
 
-  return chunks.join('');
+  return chunks.join("");
+}
+
+/*
+  Get the similarity between two strings
+*/
+export function getStringSimilarity(stringA: string, stringB: string): number {
+  const n = stringA.length;
+  const m = stringB.length;
+
+  if (n === 0) return m === 0 ? 1 : 0;
+  if (m === 0) return n === 0 ? 1 : 0;
+
+  // Initialize the cost matrix with default values
+  const cost: number[][] = Array.from({ length: n + 1 }, () =>
+    Array(m + 1).fill(0)
+  );
+
+  // Fill the first row and column with incremental values
+  for (let i = 0; i <= n; i++) cost[i][0] = i;
+  for (let j = 0; j <= m; j++) cost[0][j] = j;
+
+  // Compute the edit distance
+  for (let i = 1; i <= n; i++) {
+    const charA = stringA.charAt(i - 1);
+    for (let j = 1; j <= m; j++) {
+      const charB = stringB.charAt(j - 1);
+      if (charA === charB) {
+        cost[i][j] = cost[i - 1][j - 1];
+      } else {
+        cost[i][j] =
+          1 +
+          Math.min(
+            cost[i - 1]?.[j - 1] ?? Infinity, // Substitution
+            cost[i]?.[j - 1] ?? Infinity, // Insertion
+            cost[i - 1]?.[j] ?? Infinity // Deletion
+          );
+      }
+    }
+  }
+
+  // Normalize to a similarity score between 0 and 1
+  const maxLen = Math.max(n, m);
+  const editDistance = cost[n][m] ?? Infinity;
+  return 1 - editDistance / maxLen;
 }
