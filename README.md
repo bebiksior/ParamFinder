@@ -20,3 +20,4 @@ Discover hidden parameters straight from Caido!
 - [x] Auto-detection of maximum URL size
 - [x] Performance mode where UI only stores and displays findings (ignores requests)
 - [ ] Concurrency
+- [ ] Launch from Replay right-click menu ([#1](https://github.com/bebiksior/ParamFinder/issues/1))
