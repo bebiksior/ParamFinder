@@ -155,19 +155,15 @@ export class AnomalyDetector {
     this.initialRequestResponse = learnResponses[0]?.requestResponse;
 
     const initialResponse = this.initialRequestResponse?.response;
-    if (!initialResponse?.body) {
-      throw new Error("Initial response or body is undefined");
-    }
-
     const secondResponse = learnResponses[1]?.requestResponse.response;
-    if (!secondResponse?.body) {
-      throw new Error("Second response or body is undefined");
+    if (!initialResponse || !secondResponse) {
+      throw new Error("Initial response or second response is undefined");
     }
 
     this.differ = new DiffingSystem(
       this.paramMiner.sdk,
-      initialResponse.body,
-      secondResponse.body
+      initialResponse?.body || "",
+      secondResponse?.body || ""
     );
 
     const stable = this.checkFactors(
