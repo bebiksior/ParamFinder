@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ThemeProvider } from "@mui/material";
+import React, { useState } from "react";
+import { CircularProgress, ThemeProvider } from "@mui/material"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SessionsPage from "./pages/SessionsPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -8,11 +8,21 @@ import { caidoTheme } from "caido-material-ui";
 import "allotment/dist/style.css";
 import "./styles/style.css";
 import Header from "./components/containers/Header";
+import { usePageData } from './hooks/usePageData';
 
 const queryClient = new QueryClient();
 
 export default function App() {
   const [activeComponent, setActiveComponent] = useState("Sessions");
+  const { isLoading } = usePageData();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <CircularProgress />
+      </div>
+    );
+  }
 
   const renderComponent = () => {
     switch (activeComponent) {
@@ -22,8 +32,6 @@ export default function App() {
         return <WordlistsPage />;
       case "Settings":
         return <SettingsPage />;
-      default:
-        return null;
     }
   };
 

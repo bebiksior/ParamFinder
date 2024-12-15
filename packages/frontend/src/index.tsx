@@ -8,6 +8,16 @@ import { Caido } from "@caido/sdk-frontend";
 import { API, BackendEvents } from "backend";
 import { CommandContext } from "@caido/sdk-frontend/src/types";
 import { AttackType } from "shared";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5,
+    },
+  },
+});
 
 /**
  * Sets up React UI and returns root element
@@ -20,7 +30,11 @@ function setupUI(sdk: FrontendSDK) {
   });
 
   const root = createRoot(rootElement);
-  root.render(<App />);
+  root.render(
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
+  );
 
   return rootElement;
 }

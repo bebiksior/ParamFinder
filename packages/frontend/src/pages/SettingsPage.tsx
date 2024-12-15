@@ -80,7 +80,7 @@ export default function SettingsPage() {
   }, [localSettings, settings, debouncedSave]);
 
   return (
-    <StyledBox padding={2} className="overflow-y-auto">
+    <StyledBox padding={3} className="overflow-y-auto">
       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
         <Typography variant="h4">Settings</Typography>
       </Box>
