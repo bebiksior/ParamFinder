@@ -1,144 +1,141 @@
-import { map, atom, computed } from "nanostores";
-import { Finding, MiningSessionState, Parameter, RequestResponse } from "shared";
-import { MiningSession } from "shared";
+import { create } from "zustand";
+import {
+  MiningSession,
+  MiningSessionState,
+  Finding,
+  RequestResponse,
+  RequestContext,
+} from "shared";
 
-export const VIEW_CATEGORIES = {
-  FINDINGS: "findings",
-  REQUESTS: "requests",
-} as const;
-
-export type ViewCategory = typeof VIEW_CATEGORIES[keyof typeof VIEW_CATEGORIES];
-
-interface SessionsUIState {
-  selectedRequestId: string | null;
-  activeCategory: ViewCategory;
+interface SessionsState {
+  sessions: Record<string, MiningSession>;
+  activeSessionId: string | null;
+  newSession: (id: string, totalRequests: number) => string;
+  addFinding: (id: string, finding: Finding) => void;
+  addRequestResponse: (
+    id: string,
+    parametersSent: number,
+    context: RequestContext,
+    requestResponse?: RequestResponse
+  ) => void;
+  setActiveSession: (id: string | null) => void;
+  deleteSession: (id: string) => void;
+  updateSessionState: (id: string, sessionState: MiningSessionState) => void;
+  addLog: (id: string, log: string) => void;
+  updateSessionTotalRequests: (id: string, totalRequests: number) => void;
 }
 
-export const sessions = map<Record<string, MiningSession>>({});
-export const activeSessionId = atom<string | null>(null);
-export const sessionsUIState = atom<SessionsUIState>({
-  selectedRequestId: null,
-  activeCategory: VIEW_CATEGORIES.FINDINGS,
-});
+export const useSessionsStore = create<SessionsState>((set, get) => ({
+  sessions: {},
+  activeSessionId: null,
 
-export const miningSessionStore = {
-  sessions,
-  activeSessionId,
-  uiState: sessionsUIState,
-
-  newSession: (id: string, totalRequests: number): string => {
-    sessions.setKey(id, {
-      id,
-      findings: [],
-      requests: [],
-      state: MiningSessionState.Pending,
-      totalRequests,
-      logs: [],
-    });
-    activeSessionId.set(id);
+  newSession: (id: string, totalRequests: number) => {
+    set((state) => ({
+      sessions: {
+        ...state.sessions,
+        [id]: {
+          id,
+          findings: [],
+          sentRequests: [],
+          state: MiningSessionState.Pending,
+          totalRequests,
+          logs: [],
+        },
+      },
+      activeSessionId: id,
+    }));
     return id;
   },
 
-  updateSessionState: (id: string, state: MiningSessionState) => {
-    const session = sessions.get()[id];
-    if (session) {
-      sessions.setKey(id, { ...session, state });
-    }
+  addLog: (id: string, log: string) => {
+    set((state) => {
+      const session = state.sessions[id];
+      if (!session) return {};
+      return {
+        sessions: {
+          ...state.sessions,
+          [id]: { ...session, logs: [...session.logs, log] },
+        },
+      };
+    });
+  },
+
+  updateSessionTotalRequests: (id: string, totalRequests: number) => {
+    set((state) => {
+      const session = state.sessions[id];
+      if (!session) return {};
+      return {
+        sessions: { ...state.sessions, [id]: { ...session, totalRequests } },
+      };
+    });
   },
 
   addFinding: (id: string, finding: Finding) => {
-    const session = sessions.get()[id];
-    if (session) {
-      sessions.setKey(id, {
-        ...session,
-        findings: [...session.findings, finding],
-      });
-    }
+    set((state) => {
+      const session = state.sessions[id];
+      if (!session) return {};
+      return {
+        sessions: {
+          ...state.sessions,
+          [id]: {
+            ...session,
+            findings: [...session.findings, finding],
+          },
+        },
+      };
+    });
   },
 
-  addLog: (id: string, log: string) => {
-    const session = sessions.get()[id];
-    if (session) {
-      sessions.setKey(id, { ...session, logs: [...session.logs, log] });
-    }
+  updateSessionState: (id: string, sessionState: MiningSessionState) => {
+    set((state) => {
+      const session = state.sessions[id];
+      if (!session) return {};
+      return {
+        sessions: {
+          ...state.sessions,
+          [id]: { ...session, state: sessionState },
+        },
+      };
+    });
   },
 
   addRequestResponse: (
     id: string,
-    parametersCount: number,
-    requestResponse: RequestResponse,
-    context: "discovery" | "narrower",
+    parametersSent: number,
+    context: RequestContext,
+    requestResponse?: RequestResponse
   ) => {
-    const session = sessions.get()[id];
-    if (session) {
-      sessions.setKey(id, {
-        ...session,
-        requests: [
-          ...session.requests,
-          {
-            parametersCount,
-            requestResponse,
-            context,
+    set((state) => {
+      const session = state.sessions[id];
+      if (!session) return {};
+
+      return {
+        sessions: {
+          ...state.sessions,
+          [id]: {
+            ...session,
+            sentRequests: [
+              ...session.sentRequests,
+              { parametersSent, context, requestResponse },
+            ],
           },
-        ],
-      });
-    }
+        },
+      };
+    });
   },
 
-  getRequest: (sessionId: string, requestId: string) => {
-    const session = sessions.get()[sessionId];
-    if (!session) return null;
-
-    const request = session.requests.find((request) => request.requestResponse.id === requestId);
-    if (request) return request;
-
-    return session.findings.find((finding) => finding.requestResponse.id === requestId);
-  },
-
-  setActiveSession: (id: string) => {
-    const session = sessions.get()[id];
-    if (!session) return;
-
-    activeSessionId.set(id);
-  },
-
-  getActiveSession: () => {
-    const id = activeSessionId.get();
-    return id ? sessions.get()[id] : null;
+  setActiveSession: (id: string | null) => {
+    set({ activeSessionId: id });
   },
 
   deleteSession: (id: string) => {
-    const currentSessions = { ...sessions.get() };
-    delete currentSessions[id];
-    sessions.set(currentSessions);
-    if (activeSessionId.get() === id) {
-      activeSessionId.set(null);
-    }
-
-    if (sessionsUIState.get().selectedRequestId === id) {
-      sessionsUIState.set({
-        ...sessionsUIState.get(),
-        selectedRequestId: null,
-      });
-    }
-  },
-
-  setSelectedRequest: (requestId: string | null) => {
-    sessionsUIState.set({
-      ...sessionsUIState.get(),
-      selectedRequestId: requestId,
+    set((state) => {
+      const { [id]: _, ...sessions } = state.sessions;
+      return {
+        sessions,
+        activeSessionId:
+          state.activeSessionId === id ? null : state.activeSessionId,
+      };
     });
   },
-
-  setActiveCategory: (category: ViewCategory) => {
-    sessionsUIState.set({
-      ...sessionsUIState.get(),
-      activeCategory: category,
-    });
-  },
-
-  getSession: (sessionId: string | null) =>
-    computed(miningSessionStore.sessions, (sessions) =>
-      sessionId ? sessions[sessionId] : undefined
-    )
-};
+}));

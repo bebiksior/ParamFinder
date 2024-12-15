@@ -1,64 +1,54 @@
-import { useStore } from "@nanostores/react";
+import { useSessionsStore } from "@/stores/sessionsStore";
 import { Stack, Typography, TextField, Button } from "@mui/material";
 import { ContentCopy, Download } from "@mui/icons-material";
-import { miningSessionStore } from "../../../stores/sessionsStore";
 import { getSDK } from "@/stores/sdkStore";
-import { computed } from "nanostores";
+import { useMemo } from "react";
 
 export function SessionResults() {
   const sdk = getSDK();
 
-  const activeSessionId = useStore(miningSessionStore.activeSessionId);
-  const sessionFindings = useStore(
-    computed(
-      miningSessionStore.getSession(activeSessionId),
-      session => session?.findings
-    )
+  const findings = useSessionsStore((state) => {
+    const activeSessionId = state.activeSessionId;
+    return activeSessionId ? state.sessions[activeSessionId]?.findings : [];
+  });
+
+  const parametersText = useMemo(() => {
+    if (!findings?.length) return "";
+    return findings.map((finding) => finding.parameter.name).join("\n");
+  }, [findings]);
+
+  const handlers = useMemo(
+    () => ({
+      handleCopyParameters: () => {
+        navigator.clipboard.writeText(parametersText);
+        sdk.window.showToast(
+          `Copied ${findings?.length} parameters to clipboard`,
+          { variant: "success" }
+        );
+      },
+
+      handleExportResults: () => {
+        const blob = new Blob([parametersText], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "parameters.txt";
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+    }),
+    [findings?.length, parametersText, sdk]
   );
-
-  if (!sessionFindings) return null;
-
-  const handleCopyParameters = () => {
-    const parameters = sessionFindings
-      .map((finding) => finding.parameter.name)
-      .join("\n");
-    navigator.clipboard.writeText(parameters);
-
-    sdk.window.showToast(
-      `Copied ${sessionFindings.length} parameters to clipboard`,
-      {
-        variant: "success",
-      }
-    );
-  };
-
-  const handleExportResults = () => {
-    const blob = new Blob(
-      [
-        sessionFindings
-          .map((finding) => finding.parameter.name)
-          .join("\n"),
-      ],
-      { type: "text/plain" }
-    );
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${activeSessionId}.txt`;
-    a.click();
-  };
 
   return (
     <Stack>
       <Typography variant="h6" gutterBottom>
-        Results
+        Results ({findings?.length})
       </Typography>
       <TextField
         multiline
         rows={6}
-        value={sessionFindings
-          .map((finding) => finding.parameter.name)
-          .join("\n")}
+        value={parametersText}
         InputProps={{
           readOnly: true,
         }}
@@ -70,17 +60,15 @@ export function SessionResults() {
         <Button
           variant="outlined"
           startIcon={<ContentCopy />}
-          onClick={handleCopyParameters}
-          disabled={sessionFindings.length === 0}
+          onClick={handlers.handleCopyParameters}
           sx={{ flexGrow: 0 }}
         >
-          Copy Parameters ({sessionFindings.length})
+          Copy Parameters ({findings?.length})
         </Button>
         <Button
           variant="outlined"
           startIcon={<Download />}
-          disabled={sessionFindings.length === 0}
-          onClick={handleExportResults}
+          onClick={handlers.handleExportResults}
           sx={{ flexGrow: 0 }}
         >
           Export Results

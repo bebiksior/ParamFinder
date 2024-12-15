@@ -1,18 +1,43 @@
 import { HTTPEditor } from "@/components/common/HTTPEditor";
-import { useStore } from "@nanostores/react";
-import { miningSessionStore } from "@/stores/sessionsStore";
 import { StyledSplitter } from "caido-material-ui";
 import { EmptyPanel } from "@/components/common/EmptyPanel";
+import { useUIStore } from "@/stores/uiStore";
+import { useSessionsStore } from "@/stores/sessionsStore";
+import { useShallow } from "zustand/shallow";
 
-export default function RequestsDetails() {
-  const activeSessionId = useStore(miningSessionStore.activeSessionId);
-  const uiState = useStore(miningSessionStore.uiState);
-  const selectedRequest = miningSessionStore.getRequest(activeSessionId ?? "", uiState.selectedRequestId ?? "");
+export default function RequestDetails() {
+  const activeSessionId = useSessionsStore((state) => state.activeSessionId);
+  const selectedRequestId = useUIStore((state) => state.selectedRequestId);
+  const selectedRequestResponse = useSessionsStore(
+    useShallow((state) => {
+      if (!activeSessionId || !state.sessions[activeSessionId]) return null;
+      const session = state.sessions[activeSessionId];
 
-  if (!selectedRequest) return <EmptyPanel message="No request selected" />;
+      const findingRequest = session.findings.find(
+        (finding) => finding.requestResponse?.request.id === selectedRequestId
+      )?.requestResponse;
+      if (findingRequest) return findingRequest;
 
-  return <StyledSplitter>
-    <HTTPEditor value={selectedRequest?.requestResponse.request.raw} type="request" />
-    <HTTPEditor value={selectedRequest?.requestResponse.response.raw} type="response" />
-  </StyledSplitter>
+      return session.sentRequests.find(
+        (req) => req.requestResponse?.request.id === selectedRequestId
+      )?.requestResponse;
+    })
+  );
+
+  if (!selectedRequestResponse) {
+    return <EmptyPanel message="No request selected" />;
+  }
+
+  return (
+    <StyledSplitter>
+      <HTTPEditor
+        value={selectedRequestResponse.request.raw || ""}
+        type="request"
+      />
+      <HTTPEditor
+        value={selectedRequestResponse.response.raw || ""}
+        type="response"
+      />
+    </StyledSplitter>
+  );
 }

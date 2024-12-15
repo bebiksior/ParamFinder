@@ -1,46 +1,56 @@
-import { miningSessionStore } from '@/stores/sessionsStore';
-import { Stack, Typography } from '@mui/material';
-import { useStore } from '@nanostores/react';
-import { computed } from 'nanostores';
+import { useSessionsStore } from "@/stores/sessionsStore";
+import { Stack, Typography } from "@mui/material";
+import { useMemo } from "react";
+import { useShallow } from "zustand/shallow";
 
 export function SessionLogs() {
-  const activeSessionId = useStore(miningSessionStore.activeSessionId);
-  const sessionLogs = useStore(
-    computed(
-      miningSessionStore.getSession(activeSessionId),
-      session => session?.logs
-    )
+  const logs = useSessionsStore(
+    useShallow((state) => {
+      const activeSessionId = state.activeSessionId;
+      if (!activeSessionId || !state.sessions[activeSessionId]) return [];
+      return state.sessions[activeSessionId].logs;
+    })
   );
 
-  if (!sessionLogs) return null;
+  const LogsContent = useMemo(() => {
+    if (!logs.length) return null;
 
-  return (
-    <Stack>
-      <Typography variant="h6" gutterBottom>Logs</Typography>
+    return (
       <Stack
         sx={{
-          maxHeight: '300px',
-          overflowY: 'auto',
-          bgcolor: 'background.paper',
+          maxHeight: "450px",
+          overflowY: "auto",
+          bgcolor: "background.paper",
           p: 1,
-          borderRadius: 1
+          borderRadius: 1,
         }}
       >
-        {sessionLogs.map((log, index) => (
+        {logs.map((log, index) => (
           <Typography
             key={index}
             variant="body2"
             sx={{
-              fontFamily: 'monospace',
-              fontSize: '0.875rem',
-              lineHeight: '1.2',
-              userSelect: 'text',
+              fontFamily: "monospace",
+              fontSize: "0.875rem",
+              lineHeight: "1.2",
+              userSelect: "text",
             }}
           >
             {log}
           </Typography>
         ))}
       </Stack>
+    );
+  }, [logs]);
+
+  if (!logs.length) return null;
+
+  return (
+    <Stack>
+      <Typography variant="h6" gutterBottom>
+        Logs
+      </Typography>
+      {LogsContent}
     </Stack>
   );
 }

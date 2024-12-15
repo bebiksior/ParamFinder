@@ -14,6 +14,9 @@ export class SettingsStore {
       delay: 20,
       concurrency: 5,
       timeout: 60 * 1000 * 3, // 3 minutes
+      autoDetectMaxSize: true,
+      performanceMode: false,
+      learnRequestsCount: 8,
     };
     this.sdk = sdk;
 

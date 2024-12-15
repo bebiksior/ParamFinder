@@ -1,6 +1,4 @@
 import { StyledBox } from "caido-material-ui";
-import { useStore } from "@nanostores/react";
-import { miningSessionStore, VIEW_CATEGORIES } from "@/stores/sessionsStore";
 import {
   Table,
   TableBody,
@@ -9,57 +7,131 @@ import {
   TableHead,
   TableRow,
   Paper,
+  TableSortLabel,
 } from "@mui/material";
-import { computed } from "nanostores";
+import { useCallback, useState } from "react";
+import { useUIStore } from "@/stores/uiStore";
+import { useSessionsStore } from "@/stores/sessionsStore";
+import { VIEW_CATEGORIES } from "@/stores/uiStore";
+import { useShallow } from "zustand/shallow";
 
-// Separate computed stores for findings and requests
-const getSessionData = (sessionId: string | null, category: string) =>
-  computed(
-    [miningSessionStore.sessions, miningSessionStore.uiState],
-    (sessions, uiState) => {
-      if (!sessionId || !sessions[sessionId]) return [];
+type SortField = "id" | "status" | "length" | "time";
+type SortDirection = "asc" | "desc";
 
-      return category === VIEW_CATEGORIES.FINDINGS
-        ? sessions[sessionId].findings
-        : sessions[sessionId].requests;
+export default function RequestList() {
+  const { activeCategory, selectedRequestId, setSelectedRequest } =
+    useUIStore();
+  const activeSessionId = useSessionsStore((state) => state.activeSessionId);
+  const [sortField, setSortField] = useState<SortField>("id");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  const requestResponses = useSessionsStore(
+    useShallow((state) => {
+      if (!activeSessionId || !state.sessions[activeSessionId]) return [];
+      const session = state.sessions[activeSessionId];
+      if (activeCategory === VIEW_CATEGORIES.FINDINGS) {
+        return session.findings.map((finding) => finding.requestResponse);
+      }
+      return session.sentRequests
+        .filter((req) => req.requestResponse)
+        .map((req) => req.requestResponse!);
+    })
+  );
+
+  const handleClick = useCallback(
+    (id: string) => {
+      setSelectedRequest(id);
+    },
+    [setSelectedRequest]
+  );
+
+  const handleSort = useCallback(
+    (field: SortField) => {
+      if (sortField === field) {
+        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      } else {
+        setSortField(field);
+        setSortDirection("asc");
+      }
+    },
+    [sortField, sortDirection]
+  );
+
+  const sortedRequests = [...requestResponses].sort((a, b) => {
+    const multiplier = sortDirection === "asc" ? 1 : -1;
+    switch (sortField) {
+      case "id":
+        return multiplier * a.request.id.localeCompare(b.request.id);
+      case "status":
+        return multiplier * (a.response.status - b.response.status);
+      case "length":
+        return multiplier * (a.response.raw.length - b.response.raw.length);
+      case "time":
+        return multiplier * (a.response.time - b.response.time);
+      default:
+        return 0;
     }
-  );
+  });
 
-export default function RequestsList() {
-  const uiState = useStore(miningSessionStore.uiState);
-  const activeSessionId = useStore(miningSessionStore.activeSessionId);
-
-  // Only subscribe to the relevant data based on active category
-  const data = useStore(
-    getSessionData(activeSessionId, uiState.activeCategory)
-  );
-  const setSelectedRequest = miningSessionStore.setSelectedRequest;
+  if (!activeSessionId) return null;
 
   return (
-    <StyledBox>
-      <TableContainer component={Paper} sx={{ height: "100%" }}>
-        <Table stickyHeader>
+    <StyledBox className="overflow-auto">
+      <TableContainer component={Paper} variant="outlined">
+        <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Status Code</TableCell>
-              <TableCell>Length</TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={sortField === "id"}
+                  direction={sortField === "id" ? sortDirection : "asc"}
+                  onClick={() => handleSort("id")}
+                >
+                  ID
+                </TableSortLabel>
+              </TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={sortField === "status"}
+                  direction={sortField === "status" ? sortDirection : "asc"}
+                  onClick={() => handleSort("status")}
+                >
+                  Status
+                </TableSortLabel>
+              </TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={sortField === "length"}
+                  direction={sortField === "length" ? sortDirection : "asc"}
+                  onClick={() => handleSort("length")}
+                >
+                  Length
+                </TableSortLabel>
+              </TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={sortField === "time"}
+                  direction={sortField === "time" ? sortDirection : "asc"}
+                  onClick={() => handleSort("time")}
+                >
+                  Time
+                </TableSortLabel>
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.map((item) => (
+            {sortedRequests.map((row) => (
               <TableRow
-                key={item.requestResponse.id}
+                key={row.request.id}
                 hover
-                onClick={() => setSelectedRequest(item.requestResponse.id)}
-                selected={uiState.selectedRequestId === item.requestResponse.id}
+                selected={row.request.id === selectedRequestId}
+                onClick={() => handleClick(row.request.id)}
                 sx={{ cursor: "pointer" }}
               >
-                <TableCell>{item.requestResponse.id}</TableCell>
-                <TableCell>{item.requestResponse.response.status}</TableCell>
-                <TableCell>
-                  {item.requestResponse.response.raw.length}
-                </TableCell>
+                <TableCell>{row.request.id}</TableCell>
+                <TableCell>{row.response.status}</TableCell>
+                <TableCell>{row.response.raw.length}</TableCell>
+                <TableCell>{row.response.time}ms</TableCell>
               </TableRow>
             ))}
           </TableBody>

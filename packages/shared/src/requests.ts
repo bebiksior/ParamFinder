@@ -1,28 +1,37 @@
-export interface RequestWithRaw extends Request {
-  raw: string | Uint8Array;
-}
-
-export interface RequestResponse {
-  id: string;
-  request: RequestWithRaw;
-  response: Response;
-}
-
 export interface Request {
+  id: string;
+
   host: string;
   port: number;
-  tls: boolean;
-  method: string;
+  url: string;
   path: string;
   query: string;
-  url: string;
-  headers: Record<string, Array<string>>;
-  body: string | undefined;
-}
-
-export interface Response {
-  status: number;
+  method: string;
   headers: Record<string, Array<string>>;
   body: string;
+  tls: boolean;
+  context: RequestContext;
   raw: string;
 }
+
+export type RequestContext = "discovery" | "narrower" | "learning";
+
+export interface Response {
+  requestID: string;
+
+  status: number;
+  headers: Record<string, Array<string>>;
+  body: string | undefined;
+  time: number;
+  raw: string;
+}
+
+export type Parameter = {
+  name: string;
+  value: string;
+};
+
+export type RequestResponse = {
+  request: Request;
+  response: Response;
+};

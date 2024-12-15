@@ -1,17 +1,31 @@
-export interface ResponseComparison {
-  same_code?: number | null;
-  same_body?: string | null;
-  same_plaintext?: string | null;
-  lines_num?: number | null;
-  lines_diff?: string[] | null;
-  same_headers?: string[] | null;
-  same_redirect?: string | null;
-  param_missing?: string[] | null;
-  same_value_count?: number | null;
+export interface ResponseFactors {
+    bodyStable: boolean;
+    reflectionStable: boolean;
+
+    reflectionsCount: number;
+    statusCode: number;
+    unstableHeaders: Set<string>
+    redirect?: string;
 }
 
-export interface AnomalyResult {
-  anomaly: string;
-  rule: string;
-  additionalInfo?: string;
+export type StableFactors = ResponseFactors & {
+  bodyStable: boolean;
+  statusCodeStable: boolean;
+  reflectionStable: boolean;
+  headersStable: boolean;
+};
+
+export type Anomaly = {
+    type: AnomalyType;
+    which?: string;
+    from?: string;
+    to?: string;
+}
+
+export enum AnomalyType {
+  StatusCode = "status-code",
+  Headers = "headers",
+  Reflection = "reflection",
+  Body = "body",
+  Redirect = "redirect",
 }

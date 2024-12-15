@@ -16,3 +16,9 @@ export async function handleBackendCall<T>(
 
   return result.value;
 }
+
+
+export const uint8ArrayToString = (uint8Array: Uint8Array | undefined) => {
+  if (!uint8Array) return "";
+  return new TextDecoder().decode(uint8Array);
+};

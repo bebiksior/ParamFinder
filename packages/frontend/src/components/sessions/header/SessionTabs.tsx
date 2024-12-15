@@ -1,19 +1,18 @@
-import { useStore } from "@nanostores/react";
 import { Menu, MenuItem } from "@mui/material";
-import { useState, MouseEvent } from "react";
+import { useState, MouseEvent, memo } from "react";
 import { DeleteSweep } from "@mui/icons-material";
-
-import { miningSessionStore } from "@/stores/sessionsStore";
 import { StyledBox } from "caido-material-ui";
 import { Tab } from "../../common/Tab";
+import { useSessionsStore } from "@/stores/sessionsStore";
+import { useShallow } from "zustand/shallow";
 
-export default function SessionTabs() {
-  const sessions = useStore(miningSessionStore.sessions, {
-    keys: ["sessions"],
-  });
-  const activeSessionId = useStore(miningSessionStore.activeSessionId);
-  const setActiveSession = miningSessionStore.setActiveSession;
-  const deleteSession = miningSessionStore.deleteSession;
+const SessionTabs = memo(function SessionTabs() {
+  const sessionIds = useSessionsStore(
+    useShallow((state) => Object.keys(state.sessions))
+  );
+  const activeSessionId = useSessionsStore((state) => state.activeSessionId);
+  const setActiveSession = useSessionsStore((state) => state.setActiveSession);
+  const deleteSession = useSessionsStore((state) => state.deleteSession);
 
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
@@ -34,13 +33,18 @@ export default function SessionTabs() {
   };
 
   const handleClearAll = () => {
-    Object.keys(sessions).forEach((id) => deleteSession(id));
+    sessionIds.forEach((id) => deleteSession(id));
     handleClose();
   };
 
-  if (Object.keys(sessions).length === 0) {
-    return null;
-  }
+  const handleDelete = (id: string) => {
+    if (id === activeSessionId) {
+      setActiveSession(null);
+    }
+    deleteSession(id);
+  };
+
+  if (sessionIds.length === 0) return null;
 
   return (
     <StyledBox
@@ -48,12 +52,12 @@ export default function SessionTabs() {
       className="flex gap-2"
       sx={{ height: "auto", flexWrap: "wrap" }}
     >
-      {Object.entries(sessions).map(([id, session]) => (
+      {sessionIds.map((id) => (
         <Tab
           key={id}
           sessionId={id}
           label={id}
-          onClose={() => deleteSession(id)}
+          onClose={() => handleDelete(id)}
           isSelected={id === activeSessionId}
           onSelect={() => setActiveSession(id)}
           onContextMenu={handleContextMenu}
@@ -76,4 +80,6 @@ export default function SessionTabs() {
       </Menu>
     </StyledBox>
   );
-}
+});
+
+export default SessionTabs;

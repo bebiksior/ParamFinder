@@ -1,55 +1,41 @@
 import { SDK } from "caido:plugin";
 import {
   RequestSpec,
-  RequestResponse as CaidoRequestResponse,
+  Response as CaidoResponse,
+  Request as CaidoRequest,
 } from "caido:utils";
-import { Request, Response, RequestResponse, RequestWithRaw } from "shared";
-import { randomString } from "../util/helper";
+import { Request, Response, RequestResponse } from "shared";
 
 /**
- * Convert a Caido Request to our Request type
+ * Send a request via Caido SDK and convert the response to our type
  */
-function convertRequest(request: CaidoRequestResponse["request"]): RequestWithRaw {
+export async function sendRequest(
+  sdk: SDK,
+  request: Request
+): Promise<RequestResponse> {
+  const requestSpec = toRequestSpec(request);
+  const caidoResponse = await sdk.requests.send(requestSpec);
+
   return {
-    host: request.getHost(),
-    port: request.getPort(),
-    tls: request.getTls(),
-    method: request.getMethod(),
-    path: request.getPath(),
-    query: request.getQuery(),
-    url: request.getUrl(),
-    headers: request.getHeaders(),
-    body: request.getBody()?.toText(),
-    raw: request.getRaw().toText(),
+    request: toRequest(request, caidoResponse.request),
+    response: toResponse(request, caidoResponse.response),
   };
 }
 
-/**
- * Convert a Caido Response to our Response type
- */
-function convertResponse(response: CaidoRequestResponse["response"]): Response {
-  return {
-    status: response.getCode(),
-    headers: response.getHeaders(),
-    body: response.getBody()?.toText() || "",
-    raw: response.getRaw().toText(),
-  };
-}
-
-/**
- * Convert our Request type to a Caido RequestSpec
- */
-function convertRequestSpec(request: Request): RequestSpec {
+function toRequestSpec(request: Request): RequestSpec {
   const spec = new RequestSpec(request.url);
   spec.setTls(request.tls);
   spec.setHost(request.host);
   spec.setPort(request.port);
   spec.setMethod(request.method);
   spec.setPath(request.path);
-  spec.setQuery(request.query);
+
+  if (request.query) {
+    spec.setQuery(request.query);
+  }
 
   Object.entries(request.headers).forEach(([header, values]) => {
-    values.forEach(value => {
+    values.forEach((value) => {
       spec.setHeader(header, value);
     });
   });
@@ -62,18 +48,40 @@ function convertRequestSpec(request: Request): RequestSpec {
 }
 
 /**
- * Send a request via Caido SDK and convert the response to our type
+ * Convert a Caido request to our request type
  */
-export async function sendRequest(
-  sdk: SDK,
-  request: Request
-): Promise<RequestResponse> {
-  const convertedRequest = convertRequestSpec(request);
-  const caidoResponse = await sdk.requests.send(convertedRequest);
-
+function toRequest(originalRequest: Request, request: CaidoRequest): Request {
   return {
-    id: randomString(16),
-    request: convertRequest(caidoResponse.request),
-    response: convertResponse(caidoResponse.response),
+    id: originalRequest.id,
+    context: originalRequest.context,
+
+    host: request.getHost(),
+    port: request.getPort(),
+    url: request.getUrl(),
+    path: request.getPath(),
+    query: request.getQuery(),
+    method: request.getMethod(),
+    headers: request.getHeaders(),
+    body: request.getBody()?.toText() ?? "",
+    tls: request.getTls(),
+    raw: request.getRaw().toText(),
+  };
+}
+
+/**
+ * Convert a Caido response to our response type
+ */
+function toResponse(
+  originalRequest: Request,
+  response: CaidoResponse
+): Response {
+  return {
+    requestID: originalRequest.id,
+
+    status: response.getCode(),
+    headers: response.getHeaders(),
+    body: response.getBody()?.toText(),
+    raw: response.getRaw().toText(),
+    time: response.getRoundtripTime(),
   };
 }

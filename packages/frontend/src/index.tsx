@@ -3,11 +3,11 @@ import { FrontendSDK } from "./types";
 import App from "./App";
 import { setSDK } from "./stores/sdkStore";
 import { setupEvents } from "./events";
-import { ParamLocation } from "shared";
 import { handleBackendCall } from "./utils/utils";
 import { Caido } from "@caido/sdk-frontend";
 import { API, BackendEvents } from "backend";
 import { CommandContext } from "@caido/sdk-frontend/src/types";
+import { AttackType } from "shared";
 
 /**
  * Sets up React UI and returns root element
@@ -24,15 +24,16 @@ function setupUI(sdk: FrontendSDK) {
 
   return rootElement;
 }
+
 /**
  * Registers commands and menu items
  */
 function setupCommands(sdk: FrontendSDK) {
-  const paramsLocations = ["query", "body", "headers"] as ParamLocation[];
+  const attackTypes = ["query", "body", "headers"] as AttackType[];
 
-  paramsLocations.forEach((paramsLocation) => {
-    const commandId = `paramfinder:start-${paramsLocation}`;
-    const displayName = `Param Finder (${paramsLocation.toUpperCase()})`;
+  attackTypes.forEach((attackType) => {
+    const commandId = `paramfinder:start-${attackType}`;
+    const displayName = `Param Finder (${attackType.toUpperCase()})`;
 
     sdk.commands.register(commandId, {
       name: displayName,
@@ -43,9 +44,19 @@ function setupCommands(sdk: FrontendSDK) {
 
           for (const req of requests) {
             const request = await handleBackendCall(sdk.backend.getRequest(req.id), sdk);
+            const settings = await handleBackendCall(sdk.backend.getSettings(), sdk);
 
             handleBackendCall(sdk.backend.startMining(request, {
-              paramsLocation,
+              attackType,
+              learnRequestsCount: settings.learnRequestsCount,
+              autoDetectMaxSize: settings.autoDetectMaxSize,
+              timeout: settings.timeout,
+              delayBetweenRequests: settings.delay,
+              concurrency: settings.concurrency,
+              performanceMode: settings.performanceMode,
+              maxQuerySize: settings.maxQuerySize,
+              maxHeaderSize: settings.maxHeaderSize,
+              maxBodySize: settings.maxBodySize,
             }), sdk);
           }
         }

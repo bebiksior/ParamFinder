@@ -49,7 +49,10 @@ export function Tab({
             <button
               data-pc-name="button"
               data-p-disabled="false"
-              onClick={onClose}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClose();
+              }}
               className="cursor-pointer"
             >
               <span className="fas fa-close text-surface-900 dark:text-surface-300 hover:text-secondary-400 p-1 transition duration-200 ease-in-out"></span>

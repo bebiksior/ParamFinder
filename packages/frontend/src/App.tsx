@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { ThemeProvider } from "@mui/material"
+import { useState } from "react";
+import { ThemeProvider } from "@mui/material";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import SessionsPage from "./pages/SessionsPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -22,6 +22,8 @@ export default function App() {
         return <WordlistsPage />;
       case "Settings":
         return <SettingsPage />;
+      default:
+        return null;
     }
   };
 

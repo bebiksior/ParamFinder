@@ -29,7 +29,7 @@ function cleanupWordlist(wordlist: string[]) {
 export function randomString(length: number) {
   let result = "";
   const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    "abcdefghijklmnopqrstuvwxyz0123456789";
   const charactersLength = characters.length;
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
@@ -86,4 +86,17 @@ export async function writeToFile(sdk: SDK, data: string, filename: string) {
 /* delete a file */
 export async function deleteFile(sdk: SDK, path: string) {
   await rm(path);
+}
+
+/* uint8array to string */
+export function uint8ArrayToString(uint8Array: Uint8Array) {
+  const chunks: string[] = [];
+  const chunkSize = 65535;
+
+  for (let i = 0; i < uint8Array.length; i += chunkSize) {
+    const chunk = uint8Array.slice(i, i + chunkSize);
+    chunks.push(String.fromCharCode.apply(null, Array.from(chunk)));
+  }
+
+  return chunks.join('');
 }

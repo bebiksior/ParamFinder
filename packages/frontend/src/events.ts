@@ -1,11 +1,11 @@
-import { Finding, Parameter } from "shared";
+import { Finding, Parameter, RequestContext } from "shared";
 import { MiningSessionState, RequestResponse } from "shared";
 import { FrontendSDK } from "./types";
-import { miningSessionStore } from "./stores/sessionsStore";
+import { useSessionsStore } from "./stores/sessionsStore";
 
 export function setupEvents(sdk: FrontendSDK) {
-  const { newSession, updateSessionState, addRequestResponse, addFinding, addLog } =
-    miningSessionStore;
+  const { newSession, updateSessionState, addRequestResponse, addFinding, addLog, updateSessionTotalRequests } =
+    useSessionsStore.getState();
 
   sdk.backend.onEvent("paramfinder:new", (miningID: string, totalRequests: number) => {
     console.log("paramfinder:new", miningID, totalRequests);
@@ -34,21 +34,22 @@ export function setupEvents(sdk: FrontendSDK) {
   );
 
   sdk.backend.onEvent(
-    "paramfinder:response_received",
+    "paramfinder:progress",
     (
       miningID: string,
-      parametersCount: number,
-      requestResponse: RequestResponse,
-      context: "discovery" | "narrower",
+      parametersSent: number,
+      context: RequestContext,
+      requestResponse?: RequestResponse,
     ) => {
       console.log(
         "paramfinder:response_received",
         miningID,
-        parametersCount,
+        parametersSent,
+        context,
         requestResponse,
-        context
       );
-      addRequestResponse(miningID, parametersCount, requestResponse, context);
+
+      addRequestResponse(miningID, parametersSent, context, requestResponse);
     }
   );
 
@@ -57,6 +58,7 @@ export function setupEvents(sdk: FrontendSDK) {
     (miningID: string, finding: Finding) => {
       console.log("paramfinder:new_finding", miningID, finding);
       addFinding(miningID, finding);
+      addLog(miningID, `New parameter discovered: ${finding.parameter.name}`);
     }
   );
 
@@ -66,6 +68,14 @@ export function setupEvents(sdk: FrontendSDK) {
       console.log("paramfinder:error", miningID, error);
       updateSessionState(miningID, MiningSessionState.Error);
       addLog(miningID, `Mining session ${miningID} error: ${JSON.stringify(error)}`);
+    }
+  );
+
+  sdk.backend.onEvent(
+    "paramfinder:adjust",
+    (miningID: string, totalRequests: number) => {
+      console.log("paramfinder:adjust", miningID, totalRequests);
+      updateSessionTotalRequests(miningID, totalRequests);
     }
   );
 }

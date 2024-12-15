@@ -2,17 +2,19 @@ import { DefineEvents, SDK } from "caido:plugin";
 import {
   Finding,
   MiningSessionState,
+  RequestContext,
   RequestResponse,
 } from "shared";
 
 export type BackendEvents = DefineEvents<{
   "paramfinder:new": (miningID: string, totalRequests: number) => void;
+  "paramfinder:adjust": (miningID: string, totalRequests: number) => void;
   "paramfinder:complete": (miningID: string) => void;
-  "paramfinder:response_received": (
+  "paramfinder:progress": (
     miningID: string,
-    parametersCount: number,
-    requestResponse: RequestResponse,
-    context: "discovery" | "narrower",
+    parametersSent: number,
+    context: RequestContext,
+    requestResponse?: RequestResponse,
   ) => void;
   "paramfinder:new_finding": (
     miningID: string,

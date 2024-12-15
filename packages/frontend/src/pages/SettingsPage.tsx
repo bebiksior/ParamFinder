@@ -1,6 +1,5 @@
 import {
   Box,
-  Container,
   Paper,
   Typography,
   TextField,
@@ -9,6 +8,8 @@ import {
   Link,
   Divider,
   Avatar,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import StarIcon from "@mui/icons-material/Star";
 import {
@@ -17,27 +18,82 @@ import {
   useSettingsPath,
 } from "@/stores/settingsStore";
 import { StyledBox } from "caido-material-ui";
+import { useState, useEffect, useCallback } from "react";
+import { getSDK } from "@/stores/sdkStore";
 
 export default function SettingsPage() {
+  const sdk = getSDK();
   const { data: settings, isLoading } = useSettings();
   const { mutate: updateSettings } = useUpdateSettings();
   const { data: settingsPath } = useSettingsPath();
+  const [localSettings, setLocalSettings] = useState(settings);
+
+  useEffect(() => {
+    if (settings) {
+      setLocalSettings(settings);
+    }
+  }, [settings]);
+
+  const debouncedSave = useCallback(
+    (newSettings: typeof settings) => {
+      if (!newSettings) return;
+
+      if (newSettings.learnRequestsCount < 3) {
+        sdk.window.showToast("Learn Requests Count must be at least 3", {
+          variant: "error",
+        });
+        return;
+      }
+
+      if (newSettings.delay < 0) {
+        sdk.window.showToast("Request Delay must be at least 0", {
+          variant: "error",
+        });
+        return;
+      }
+
+      if (newSettings.timeout < 0) {
+        sdk.window.showToast("Request Timeout must be at least 0", {
+          variant: "error",
+        });
+        return;
+      }
+
+      updateSettings(newSettings);
+    },
+    [updateSettings, sdk.window]
+  );
+
+  useEffect(() => {
+    if (
+      !localSettings ||
+      JSON.stringify(settings) === JSON.stringify(localSettings)
+    ) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      debouncedSave(localSettings);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [localSettings, settings, debouncedSave]);
 
   if (isLoading) {
     return (
-      <Container maxWidth="lg">
+      <StyledBox maxWidth="lg">
         <Box py={4}>
           <Typography variant="h4">Loading settings...</Typography>
         </Box>
-      </Container>
+      </StyledBox>
     );
   }
 
   return (
-    <StyledBox padding={2}>
-      <Typography variant="h4" gutterBottom>
-        Settings
-      </Typography>
+    <StyledBox padding={2} className="overflow-y-auto">
+      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+        <Typography variant="h4">Settings</Typography>
+      </Box>
 
       <Paper sx={{ p: 3, mt: 3 }}>
         <Typography variant="h6" gutterBottom>
@@ -52,23 +108,29 @@ export default function SettingsPage() {
           Settings are stored in: {settingsPath}
         </Typography>
 
-        <Stack spacing={3} sx={{ maxWidth: 400, backgroundColor: "transparent" }}>
+        <Stack
+          spacing={3}
+          sx={{ maxWidth: 400, backgroundColor: "transparent" }}
+        >
           <TextField
             label="Request Delay (ms)"
             type="number"
-            value={settings?.delay}
+            value={localSettings?.delay || ""}
             onChange={(e) =>
-              updateSettings({ ...settings!, delay: Number(e.target.value) })
+              setLocalSettings({
+                ...localSettings!,
+                delay: Number(e.target.value),
+              })
             }
             fullWidth
           />
           <TextField
             label="Concurrency"
             type="number"
-            value={settings?.concurrency}
+            value={localSettings?.concurrency || ""}
             onChange={(e) =>
-              updateSettings({
-                ...settings!,
+              setLocalSettings({
+                ...localSettings!,
                 concurrency: Number(e.target.value),
               })
             }
@@ -79,10 +141,97 @@ export default function SettingsPage() {
           <TextField
             label="Request Timeout (ms)"
             type="number"
-            value={settings?.timeout}
+            value={localSettings?.timeout || ""}
             onChange={(e) =>
-              updateSettings({ ...settings!, timeout: Number(e.target.value) })
+              setLocalSettings({
+                ...localSettings!,
+                timeout: Number(e.target.value),
+              })
             }
+            fullWidth
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={localSettings?.autoDetectMaxSize}
+                onChange={(e) =>
+                  setLocalSettings({
+                    ...localSettings!,
+                    autoDetectMaxSize: e.target.checked,
+                    maxQuerySize: e.target.checked
+                      ? undefined
+                      : localSettings?.maxQuerySize,
+                  })
+                }
+              />
+            }
+            label="Auto Detect Max URL Size"
+          />
+          {!localSettings?.autoDetectMaxSize && (
+            <>
+              <TextField
+                label="Max URL Size"
+                type="number"
+                value={localSettings?.maxQuerySize || ""}
+                onChange={(e) =>
+                  setLocalSettings({
+                    ...localSettings!,
+                    maxQuerySize: Number(e.target.value),
+                  })
+                }
+                fullWidth
+              />
+              <TextField
+                label="Max Header Size"
+                type="number"
+                value={localSettings?.maxHeaderSize || ""}
+                onChange={(e) =>
+                  setLocalSettings({
+                    ...localSettings!,
+                    maxHeaderSize: Number(e.target.value),
+                  })
+                }
+                fullWidth
+              />
+              <TextField
+                label="Max Body Size"
+                type="number"
+                value={localSettings?.maxBodySize || ""}
+                onChange={(e) =>
+                  setLocalSettings({
+                    ...localSettings!,
+                    maxBodySize: Number(e.target.value),
+                  })
+                }
+                fullWidth
+              />
+            </>
+          )}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={localSettings?.performanceMode}
+                onChange={(e) =>
+                  setLocalSettings({
+                    ...localSettings!,
+                    performanceMode: e.target.checked,
+                  })
+                }
+              />
+            }
+            label="Performance Mode (receive only findings)"
+          />
+          <TextField
+            label="Learn Requests Count"
+            type="number"
+            value={localSettings?.learnRequestsCount || ""}
+            onChange={(e) =>
+              setLocalSettings({
+                ...localSettings!,
+                learnRequestsCount: Number(e.target.value),
+              })
+            }
+            helperText="Minimum value is 3. Recommended value is 8 or more."
             fullWidth
           />
         </Stack>
@@ -97,7 +246,12 @@ export default function SettingsPage() {
             mb: 1,
           }}
         >
-          <Typography variant="h6" gutterBottom fontWeight="bold" color="primary">
+          <Typography
+            variant="h6"
+            gutterBottom
+            fontWeight="bold"
+            color="primary"
+          >
             About ParamFinder
           </Typography>
           <Button
@@ -113,7 +267,9 @@ export default function SettingsPage() {
           </Button>
         </Box>
         <Typography variant="body1">
-          <strong>ParamFinder</strong> is a Caido plugin designed to help you discover hidden parameters in web applications. You can find the source code on{" "}
+          <strong>ParamFinder</strong> is a Caido plugin designed to help you
+          discover hidden parameters in web applications. You can find the
+          source code on{" "}
           <Link
             href="https://github.com/bebiksior/ParamFinder"
             target="_blank"
@@ -124,10 +280,14 @@ export default function SettingsPage() {
           .
         </Typography>
         <Typography variant="body1" sx={{ mt: 1 }}>
-          Please note that ParamFinder is currently in beta, and some features like concurrency are not implemented yet. Your feedback and bug reports are highly appreciated!
+          Please note that ParamFinder is currently in beta, and some features
+          like concurrency are not implemented yet. Your feedback and bug
+          reports are highly appreciated!
         </Typography>
         <Typography variant="body1" sx={{ mt: 1 }}>
-          Feel free to contribute to the project :D You can submit feature requests and report bugs via the GitHub issues page. I'm always looking for new ideas and improvements!
+          Feel free to contribute to the project :D You can submit feature
+          requests and report bugs via the GitHub issues page. I'm always
+          looking for new ideas and improvements!
         </Typography>
         <Divider sx={{ my: 2 }} />
         <Typography variant="body2" color="textSecondary">
