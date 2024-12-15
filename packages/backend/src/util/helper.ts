@@ -102,44 +102,36 @@ export function uint8ArrayToString(uint8Array: Uint8Array) {
 
 /*
   Get the similarity between two strings
+  https://github.com/stephenjjbrown/string-similarity-js/blob/master/src/string-similarity.ts
 */
-export function getStringSimilarity(stringA: string, stringB: string): number {
-  const n = stringA.length;
-  const m = stringB.length;
+export const stringSimilarity = (
+  str1: string,
+  str2: string,
+  substringLength: number = 2,
+  caseSensitive: boolean = false
+) => {
+  if (!caseSensitive) {
+    str1 = str1.toLowerCase();
+    str2 = str2.toLowerCase();
+  }
 
-  if (n === 0) return m === 0 ? 1 : 0;
-  if (m === 0) return n === 0 ? 1 : 0;
+  if (str1.length < substringLength || str2.length < substringLength) return 0;
 
-  // Initialize the cost matrix with default values
-  const cost: number[][] = Array.from({ length: n + 1 }, () =>
-    Array(m + 1).fill(0)
-  );
+  const map = new Map();
+  for (let i = 0; i < str1.length - (substringLength - 1); i++) {
+    const substr1 = str1.substr(i, substringLength);
+    map.set(substr1, map.has(substr1) ? map.get(substr1) + 1 : 1);
+  }
 
-  // Fill the first row and column with incremental values
-  for (let i = 0; i <= n; i++) cost[i][0] = i;
-  for (let j = 0; j <= m; j++) cost[0][j] = j;
-
-  // Compute the edit distance
-  for (let i = 1; i <= n; i++) {
-    const charA = stringA.charAt(i - 1);
-    for (let j = 1; j <= m; j++) {
-      const charB = stringB.charAt(j - 1);
-      if (charA === charB) {
-        cost[i][j] = cost[i - 1][j - 1];
-      } else {
-        cost[i][j] =
-          1 +
-          Math.min(
-            cost[i - 1]?.[j - 1] ?? Infinity, // Substitution
-            cost[i]?.[j - 1] ?? Infinity, // Insertion
-            cost[i - 1]?.[j] ?? Infinity // Deletion
-          );
-      }
+  let match = 0;
+  for (let j = 0; j < str2.length - (substringLength - 1); j++) {
+    const substr2 = str2.substr(j, substringLength);
+    const count = map.has(substr2) ? map.get(substr2) : 0;
+    if (count > 0) {
+      map.set(substr2, count - 1);
+      match++;
     }
   }
 
-  // Normalize to a similarity score between 0 and 1
-  const maxLen = Math.max(n, m);
-  const editDistance = cost[n][m] ?? Infinity;
-  return 1 - editDistance / maxLen;
-}
+  return (match * 2) / (str1.length + str2.length - (substringLength - 1) * 2);
+};

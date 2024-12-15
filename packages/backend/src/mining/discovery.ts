@@ -85,7 +85,7 @@ export class ParamDiscovery {
         if (verifyAnomaly) {
           this.paramMiner.eventEmitter.emit(
             "logs",
-            `Verified anomaly discovered, narrowing down ${chunk.length} parameters`
+            `Anomaly ${verifyAnomaly.type.toUpperCase()} detected, narrowing down ${chunk.length} parameters`
           );
 
           const narrowedDownChunk = await this.narrowDownWordlist(chunk);

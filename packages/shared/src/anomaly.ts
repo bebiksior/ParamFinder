@@ -6,6 +6,7 @@ export interface ResponseFactors {
     statusCode: number;
     unstableHeaders: Set<string>
     redirect?: string;
+    similarity: number;
 }
 
 export type StableFactors = ResponseFactors & {
@@ -13,6 +14,7 @@ export type StableFactors = ResponseFactors & {
   statusCodeStable: boolean;
   reflectionStable: boolean;
   headersStable: boolean;
+  similarityStable: boolean;
 };
 
 export type Anomaly = {

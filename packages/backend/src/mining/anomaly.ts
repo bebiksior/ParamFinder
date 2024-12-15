@@ -6,7 +6,7 @@ import {
 } from "shared";
 import { Anomaly, AnomalyType, StableFactors } from "shared";
 import { DiffingSystem } from "../util/diffing";
-import { getStringSimilarity, randomString } from "../util/helper";
+import { stringSimilarity, randomString } from "../util/helper";
 import { ParamMiner } from "./param-miner";
 
 export class AnomalyDetector {
@@ -33,7 +33,7 @@ export class AnomalyDetector {
     if (this.wafResponse) {
       if (
         this.wafResponse.status === response.status &&
-        getStringSimilarity(this.wafResponse.body, responseBody) > 0.95
+        stringSimilarity(this.wafResponse.body, responseBody) > 0.95
       ) {
         return undefined;
       }
@@ -113,6 +113,16 @@ export class AnomalyDetector {
       }
     }
 
+    // Check similarity between responses if stable
+    if (this.stableFactors.similarityStable) {
+      const similarity = stringSimilarity(this.initialRequestResponse?.response.body || "", responseBody);
+      if (similarity < 0.95) {
+        return {
+          type: AnomalyType.Body,
+        };
+      }
+    }
+
     return undefined;
   }
 
@@ -185,6 +195,17 @@ export class AnomalyDetector {
       learnResponses[1]?.parameters ?? []
     );
 
+    // Check similarity between first two responses
+    const similarity = stringSimilarity(initialResponse.body || "", secondResponse.body || "");
+    stable.similarityStable = similarity > 0.98;
+    stable.similarity = similarity;
+
+    if (!stable.similarityStable) {
+      this.paramMiner.sdk.console.log(
+        `[!!!] Response similarity ${similarity} is below threshold 0.98`
+      );
+    }
+
     for (let i = 2; i < learnRequestsCount; i++) {
       const learnResponse = learnResponses[i];
       if (!learnResponse) {
@@ -201,6 +222,8 @@ export class AnomalyDetector {
       stable.reflectionStable =
         stable.reflectionStable && newFactors.reflectionStable;
       stable.headersStable = stable.headersStable && newFactors.headersStable;
+      stable.similarityStable = stable.similarityStable && newFactors.similarityStable;
+      stable.similarity = Math.min(stable.similarity, newFactors.similarity);
       stable.unstableHeaders = new Set([
         ...stable.unstableHeaders,
         ...newFactors.unstableHeaders,
@@ -241,9 +264,11 @@ export class AnomalyDetector {
       headersStable: true,
       statusCodeStable: true,
       reflectionStable: true,
+      similarityStable: true,
       reflectionsCount: 0,
       statusCode: response.status,
       unstableHeaders: new Set<string>(),
+      similarity: 1
     } as StableFactors;
 
     const locationHeader = response.headers["Location"];
@@ -252,6 +277,12 @@ export class AnomalyDetector {
     }
 
     const responseBody = response.body || "";
+    const initialBody = this.initialRequestResponse?.response.body || "";
+
+    // Calculate similarity with initial response
+    const similarity = stringSimilarity(initialBody, responseBody);
+    stable.similarity = similarity;
+    stable.similarityStable = similarity > 0.98;
 
     const hasChanges = this.differ?.hasChanges(responseBody);
     if (hasChanges) {
