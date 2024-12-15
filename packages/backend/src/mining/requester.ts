@@ -40,6 +40,8 @@ export class Requester {
       headers: { ...request.headers }
     };
 
+    this.paramMiner.eventEmitter.emit("debug", `[requester.ts] Sending request with ${parameters.length} parameters... (requestCopy has ${Object.keys(requestCopy).length} parameters)`);
+
     switch (attackType) {
       case "query":
         // Add parameters to query string with URL encoding

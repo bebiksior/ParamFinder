@@ -143,7 +143,7 @@ export class AnomalyDetector {
       throw new Error("Learn requests count must be at least 3");
     }
 
-    this.paramMiner.eventEmitter.emit("debug", `Starting learning phase with ${learnRequestsCount} requests`);
+    this.paramMiner.eventEmitter.emit("debug", `[anomaly.ts] Starting learning phase with ${learnRequestsCount} requests`);
 
     const learnResponses: {
       requestResponse: RequestResponse;
@@ -160,7 +160,7 @@ export class AnomalyDetector {
       }
 
       const params = this.getParams(i + 1);
-      this.paramMiner.eventEmitter.emit("debug", `Sending learning request ${i + 1}/${learnRequestsCount}`);
+      this.paramMiner.eventEmitter.emit("debug", `[anomaly.ts] Sending learning request ${i + 1}/${learnRequestsCount}`);
 
       const requestResponse =
         await this.paramMiner.requester.sendRequestWithParams(
@@ -246,7 +246,7 @@ export class AnomalyDetector {
     }
 
     this.stableFactors = stable;
-    this.paramMiner.eventEmitter.emit("debug", "Learning phase completed");
+    this.paramMiner.eventEmitter.emit("debug", "[anomaly.ts] Learning phase completed");
     this.paramMiner.sdk.console.log(
       JSON.stringify(
         {

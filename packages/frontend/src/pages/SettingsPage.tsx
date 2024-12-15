@@ -74,7 +74,7 @@ export default function SettingsPage() {
 
     const timeoutId = setTimeout(() => {
       debouncedSave(localSettings);
-    }, 500);
+    }, 200);
 
     return () => clearTimeout(timeoutId);
   }, [localSettings, settings, debouncedSave]);

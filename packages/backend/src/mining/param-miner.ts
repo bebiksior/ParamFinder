@@ -95,6 +95,8 @@ export class ParamMiner {
       if (wafResponse) {
         this.eventEmitter.emit("logs", "WAF detected");
         this.anomalyDetector.setWafResponse(wafResponse);
+      } else {
+        this.eventEmitter.emit("logs", "No WAF detected");
       }
     }
 

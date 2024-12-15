@@ -46,7 +46,7 @@ export function setupEvents(sdk: FrontendSDK) {
         miningID,
         parametersSent,
         context,
-        requestResponse,
+        JSON.stringify(requestResponse),
       );
 
       addRequestResponse(miningID, parametersSent, context, requestResponse);

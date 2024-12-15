@@ -24,22 +24,22 @@ export class ParamDiscovery {
     const timeout = this.paramMiner.config.timeout;
     const startTime = Date.now();
 
-    this.paramMiner.eventEmitter.emit("debug", `Starting discovery with timeout ${timeout}ms`);
+    this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Starting discovery with timeout ${timeout}ms`);
 
     while (this.hasMoreParameters()) {
       if (this.paramMiner.state === MiningSessionState.Canceled) {
-        this.paramMiner.eventEmitter.emit("debug", "Discovery canceled");
+        this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] Discovery canceled");
         return;
       }
 
       if (this.paramMiner.state === MiningSessionState.Paused) {
-        this.paramMiner.eventEmitter.emit("debug", "Discovery paused");
+        this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] Discovery paused");
         await this.waitWhilePaused();
       }
 
       const currentTime = Date.now();
       if (currentTime - startTime > timeout) {
-        this.paramMiner.eventEmitter.emit("debug", `Discovery timed out after ${timeout}ms`);
+        this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Discovery timed out after ${timeout}ms`);
         this.paramMiner.eventEmitter.emit(
           "logs",
           `Discovery timed out after ${timeout}ms`
@@ -50,13 +50,16 @@ export class ParamDiscovery {
 
       const chunk = this.getNextWordlistChunk();
       if (chunk.length === 0) {
-        this.paramMiner.eventEmitter.emit("debug", "No more parameters to process");
+        this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] No more parameters to process");
         break;
       }
 
-      this.paramMiner.eventEmitter.emit("debug", `Processing chunk of ${chunk.length} parameters`);
+      this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Processing chunk of ${chunk.length} parameters`);
       const requestStartTime = Date.now();
 
+      this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Sending request with ${chunk.length} parameters...`);
+      const query = chunk.map(param => `${encodeURIComponent(param.name)}=${encodeURIComponent(param.value)}`).join("&");
+      this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Built query string of length ${query.length}`);
       const requestResponse =
         await this.paramMiner.requester.sendRequestWithParams(
           this.paramMiner.target,
@@ -65,12 +68,12 @@ export class ParamDiscovery {
         );
 
       const requestTime = Date.now() - requestStartTime;
-      this.paramMiner.eventEmitter.emit("debug", `Request completed in ${requestTime}ms`);
+      this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Request completed in ${requestTime}ms`);
 
       this.paramMiner.eventEmitter.emit("responseReceived", chunk.length, requestResponse);
 
       if (requestResponse.response.status === 429) {
-        this.paramMiner.eventEmitter.emit("debug", "Rate limit detected (429)");
+        this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] Rate limit detected (429)");
         this.paramMiner.eventEmitter.emit("logs", "Rate limited, cancelling discovery. Please adjust delay between requests.");
         this.paramMiner.updateState(MiningSessionState.Canceled);
         return;
@@ -82,7 +85,7 @@ export class ParamDiscovery {
         chunk
       );
       if (anomaly) {
-        this.paramMiner.eventEmitter.emit("debug", `Initial anomaly detected: ${anomaly.type}`);
+        this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Initial anomaly detected: ${anomaly.type}`);
 
         // Send a verification request
         const verifyStartTime = Date.now();
@@ -92,7 +95,7 @@ export class ParamDiscovery {
           "narrower"
         );
         const verifyTime = Date.now() - verifyStartTime;
-        this.paramMiner.eventEmitter.emit("debug", `Verification request completed in ${verifyTime}ms`);
+        this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Verification request completed in ${verifyTime}ms`);
 
         this.paramMiner.eventEmitter.emit("responseReceived", chunk.length, verifyRequestResponse);
 
@@ -102,7 +105,7 @@ export class ParamDiscovery {
         );
 
         if (verifyAnomaly) {
-          this.paramMiner.eventEmitter.emit("debug", `Anomaly verified: ${verifyAnomaly.type}`);
+          this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Anomaly verified: ${verifyAnomaly.type}`);
           this.paramMiner.eventEmitter.emit(
             "logs",
             `Anomaly ${verifyAnomaly.type.toUpperCase()} detected in response. ` +
@@ -111,19 +114,19 @@ export class ParamDiscovery {
             `${verifyAnomaly.to ? `to "${verifyAnomaly.to}"` : ''}`
           );
 
-          const narrowedDownChunk = await this.narrowDownWordlist(chunk);
-          this.paramMiner.eventEmitter.emit("debug", `Narrowed down to ${narrowedDownChunk.length} parameters`);
+          const narrowedDownChunk = await this.narrowDownWordlist([...chunk]);
+          this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Narrowed down to ${narrowedDownChunk.length} parameters`);
 
           narrowedDownChunk.forEach((finding) => {
             this.paramMiner.eventEmitter.emit("finding", finding);
           });
 
           if (narrowedDownChunk.length === 0) {
-            this.paramMiner.eventEmitter.emit("debug", "False positive detected");
+            this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] False positive detected");
             this.paramMiner.eventEmitter.emit("logs", "False positive - no parameters could be isolated");
           }
         } else {
-          this.paramMiner.eventEmitter.emit("debug", "Anomaly not verified in second request");
+          this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] Anomaly not verified in second request");
         }
       }
 
@@ -138,7 +141,7 @@ export class ParamDiscovery {
 
       const endTime = Date.now();
       const totalTime = endTime - startTime;
-      this.paramMiner.eventEmitter.emit("debug", `Discovery completed in ${totalTime}ms`);
+      this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Discovery completed in ${totalTime}ms`);
       this.paramMiner.eventEmitter.emit(
         "logs",
         `Discovery complete in ${totalTime}ms`
@@ -150,7 +153,7 @@ export class ParamDiscovery {
     const findings: Finding[] = [];
     const chunksToProcess: Parameter[][] = [chunk];
 
-    this.paramMiner.eventEmitter.emit("debug", `Starting narrowDownWordlist with ${chunk.length} parameters`);
+    this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Starting narrowDownWordlist with ${chunk.length} parameters`);
 
     while (chunksToProcess.length > 0) {
       const currentChunk = chunksToProcess.pop();
@@ -164,7 +167,7 @@ export class ParamDiscovery {
         await this.waitWhilePaused();
       }
 
-      this.paramMiner.eventEmitter.emit("debug", `Processing chunk of ${currentChunk.length} parameters`);
+      this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Processing chunk of ${currentChunk.length} parameters`);
       const startTime = Date.now();
 
       const { request, response } = await this.paramMiner.requester.sendRequestWithParams(
@@ -176,7 +179,7 @@ export class ParamDiscovery {
       this.paramMiner.eventEmitter.emit("responseReceived", currentChunk.length, { request, response });
 
       const requestTime = Date.now() - startTime;
-      this.paramMiner.eventEmitter.emit("debug", `Request completed in ${requestTime}ms`);
+      this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Request completed in ${requestTime}ms`);
 
       const anomaly = this.paramMiner.anomalyDetector.hasChanges(
         response,
@@ -184,13 +187,13 @@ export class ParamDiscovery {
       );
 
       if (anomaly) {
-        this.paramMiner.eventEmitter.emit("debug", `Anomaly detected: ${anomaly.type}`);
+        this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Anomaly detected: ${anomaly.type}`);
 
         if (currentChunk.length === 1) {
           const parameter = currentChunk[0];
           if (!parameter) continue;
 
-          this.paramMiner.eventEmitter.emit("debug", `Verifying single parameter: ${parameter.name}`);
+          this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Verifying single parameter: ${parameter.name}`);
           const verifyStartTime = Date.now();
 
           const { request, response: verifyResponse } = await this.paramMiner.requester.sendRequestWithParams(
@@ -200,7 +203,7 @@ export class ParamDiscovery {
           );
 
           const verifyRequestTime = Date.now() - verifyStartTime;
-          this.paramMiner.eventEmitter.emit("debug", `Verification request completed in ${verifyRequestTime}ms`);
+          this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Verification request completed in ${verifyRequestTime}ms`);
 
           this.paramMiner.eventEmitter.emit(
             "responseReceived",
@@ -214,26 +217,26 @@ export class ParamDiscovery {
           );
 
           if (verifyAnomaly) {
-            this.paramMiner.eventEmitter.emit("debug", `Parameter verified: ${parameter.name} (${verifyAnomaly.type})`);
+            this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Parameter verified: ${parameter.name} (${verifyAnomaly.type})`);
             findings.push({
               requestResponse: { request, response: verifyResponse },
               parameter,
               anomalyType: verifyAnomaly.type
             });
           } else {
-            this.paramMiner.eventEmitter.emit("debug", `Parameter verification failed: ${parameter.name}`);
+            this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Parameter verification failed: ${parameter.name}`);
           }
         } else {
           const mid = Math.floor(currentChunk.length / 2);
           const firstHalf = currentChunk.slice(0, mid);
           const secondHalf = currentChunk.slice(mid);
 
-          this.paramMiner.eventEmitter.emit("debug", `Splitting chunk into ${firstHalf.length} and ${secondHalf.length} parameters`);
+          this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Splitting chunk into ${firstHalf.length} and ${secondHalf.length} parameters`);
           chunksToProcess.push(secondHalf);
           chunksToProcess.push(firstHalf);
         }
       } else {
-        this.paramMiner.eventEmitter.emit("debug", `No anomaly detected for chunk of ${currentChunk.length} parameters`);
+        this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] No anomaly detected for chunk of ${currentChunk.length} parameters`);
       }
 
       await new Promise((resolve) =>
@@ -241,7 +244,7 @@ export class ParamDiscovery {
       );
     }
 
-    this.paramMiner.eventEmitter.emit("debug", `Narrowing complete - found ${findings.length} parameters`);
+    this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Narrowing complete - found ${findings.length} parameters`);
     return findings;
   }
 
@@ -284,10 +287,14 @@ export class ParamDiscovery {
         continue;
       }
 
-      const paramSize = attackType === "body"
-        ? 6 + word.length + this.PARAMS_VALUES_SIZE // "key":"value",
-        : 2 + word.length + this.PARAMS_VALUES_SIZE; // key=value&
+      const encodedWord = encodeURIComponent(word);
+      const encodedValue = encodeURIComponent(this.randomParameterValue());
 
+      const paramSize = attackType === "body"
+        ? 6 + encodedWord.length + encodedValue.length // "key":"value",
+        : 2 + encodedWord.length + encodedValue.length; // key=value&
+
+      // Check if adding this parameter would exceed maxSize
       if (maxSize && currentSize + paramSize > maxSize) {
         break;
       }
@@ -325,9 +332,12 @@ export class ParamDiscovery {
     let currentChunkSize = 0;
 
     for (const word of wordlist) {
+      const encodedWord = encodeURIComponent(word);
+      const encodedValue = encodeURIComponent(this.randomParameterValue());
+
       const paramSize = attackType === "body"
-        ? 6 + word.length + this.PARAMS_VALUES_SIZE
-        : 2 + word.length + this.PARAMS_VALUES_SIZE;
+        ? 6 + encodedWord.length + encodedValue.length
+        : 2 + encodedWord.length + encodedValue.length;
 
       if (maxSize && currentSize + paramSize > maxSize) {
         if (currentChunkSize > 0) {
