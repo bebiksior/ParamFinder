@@ -18,6 +18,7 @@ export class SettingsStore {
       performanceMode: false,
       learnRequestsCount: 8,
       wafDetection: true,
+      debug: false,
     };
     this.sdk = sdk;
 

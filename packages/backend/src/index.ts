@@ -63,6 +63,11 @@ async function startMining(
       return error("Wordlist not found");
     }
 
+    const settings = settingsStore?.getSettings();
+    if (!settings) {
+      return error("Settings not found");
+    }
+
     if (wordlists.filter((wordlist) => wordlist.enabled).length === 0) {
       return error("No wordlists found. Please upload a wordlist first.");
     }
@@ -129,6 +134,12 @@ async function startMining(
     paramMiner.onLogs((logs) => {
       if (sessionID) {
         sdk.api.send("paramfinder:log", sessionID, logs);
+      }
+    });
+
+    paramMiner.onDebug((debug) => {
+      if (sessionID && settings.debug) {
+        sdk.api.send("paramfinder:log", sessionID, `[DEBUG] ${debug}`);
       }
     });
 

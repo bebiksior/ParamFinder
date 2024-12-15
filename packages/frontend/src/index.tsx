@@ -72,6 +72,7 @@ function setupCommands(sdk: FrontendSDK) {
               maxHeaderSize: settings.maxHeaderSize,
               maxBodySize: settings.maxBodySize,
               wafDetection: settings.wafDetection,
+              debug: settings.debug,
             }), sdk);
           }
         }

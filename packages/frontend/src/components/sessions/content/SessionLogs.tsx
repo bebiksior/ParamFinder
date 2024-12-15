@@ -1,6 +1,6 @@
 import { useSessionsStore } from "@/stores/sessionsStore";
 import { Stack, Typography } from "@mui/material";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/shallow";
 
 export function SessionLogs() {
@@ -12,11 +12,34 @@ export function SessionLogs() {
     })
   );
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const shouldScrollRef = useRef(true);
+
+  useEffect(() => {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement || !shouldScrollRef.current) return;
+
+    scrollElement.scrollTop = scrollElement.scrollHeight;
+  }, [logs]);
+
+  const handleScroll = () => {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) return;
+
+    const isAtBottom = Math.abs(
+      scrollElement.scrollHeight - scrollElement.clientHeight - scrollElement.scrollTop
+    ) < 1;
+
+    shouldScrollRef.current = isAtBottom;
+  };
+
   const LogsContent = useMemo(() => {
     if (!logs.length) return null;
 
     return (
       <Stack
+        ref={scrollRef}
+        onScroll={handleScroll}
         sx={{
           maxHeight: "450px",
           overflowY: "auto",

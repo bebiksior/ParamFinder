@@ -24,17 +24,22 @@ export class ParamDiscovery {
     const timeout = this.paramMiner.config.timeout;
     const startTime = Date.now();
 
+    this.paramMiner.eventEmitter.emit("debug", `Starting discovery with timeout ${timeout}ms`);
+
     while (this.hasMoreParameters()) {
       if (this.paramMiner.state === MiningSessionState.Canceled) {
+        this.paramMiner.eventEmitter.emit("debug", "Discovery canceled");
         return;
       }
 
       if (this.paramMiner.state === MiningSessionState.Paused) {
+        this.paramMiner.eventEmitter.emit("debug", "Discovery paused");
         await this.waitWhilePaused();
       }
 
       const currentTime = Date.now();
       if (currentTime - startTime > timeout) {
+        this.paramMiner.eventEmitter.emit("debug", `Discovery timed out after ${timeout}ms`);
         this.paramMiner.eventEmitter.emit(
           "logs",
           `Discovery timed out after ${timeout}ms`
@@ -45,8 +50,12 @@ export class ParamDiscovery {
 
       const chunk = this.getNextWordlistChunk();
       if (chunk.length === 0) {
+        this.paramMiner.eventEmitter.emit("debug", "No more parameters to process");
         break;
       }
+
+      this.paramMiner.eventEmitter.emit("debug", `Processing chunk of ${chunk.length} parameters`);
+      const requestStartTime = Date.now();
 
       const requestResponse =
         await this.paramMiner.requester.sendRequestWithParams(
@@ -55,9 +64,13 @@ export class ParamDiscovery {
           "discovery"
         );
 
+      const requestTime = Date.now() - requestStartTime;
+      this.paramMiner.eventEmitter.emit("debug", `Request completed in ${requestTime}ms`);
+
       this.paramMiner.eventEmitter.emit("responseReceived", chunk.length, requestResponse);
 
       if (requestResponse.response.status === 429) {
+        this.paramMiner.eventEmitter.emit("debug", "Rate limit detected (429)");
         this.paramMiner.eventEmitter.emit("logs", "Rate limited, cancelling discovery. Please adjust delay between requests.");
         this.paramMiner.updateState(MiningSessionState.Canceled);
         return;
@@ -69,12 +82,18 @@ export class ParamDiscovery {
         chunk
       );
       if (anomaly) {
+        this.paramMiner.eventEmitter.emit("debug", `Initial anomaly detected: ${anomaly.type}`);
+
         // Send a verification request
+        const verifyStartTime = Date.now();
         const verifyRequestResponse = await this.paramMiner.requester.sendRequestWithParams(
           this.paramMiner.target,
           chunk,
           "narrower"
         );
+        const verifyTime = Date.now() - verifyStartTime;
+        this.paramMiner.eventEmitter.emit("debug", `Verification request completed in ${verifyTime}ms`);
+
         this.paramMiner.eventEmitter.emit("responseReceived", chunk.length, verifyRequestResponse);
 
         const verifyAnomaly = this.paramMiner.anomalyDetector.hasChanges(
@@ -83,15 +102,28 @@ export class ParamDiscovery {
         );
 
         if (verifyAnomaly) {
+          this.paramMiner.eventEmitter.emit("debug", `Anomaly verified: ${verifyAnomaly.type}`);
           this.paramMiner.eventEmitter.emit(
             "logs",
-            `Anomaly ${verifyAnomaly.type.toUpperCase()} detected, narrowing down ${chunk.length} parameters`
+            `Anomaly ${verifyAnomaly.type.toUpperCase()} detected in response. ` +
+            `Narrowing down ${chunk.length} parameters. ` +
+            `${verifyAnomaly.from ? `Changed from "${verifyAnomaly.from}" ` : ''}` +
+            `${verifyAnomaly.to ? `to "${verifyAnomaly.to}"` : ''}`
           );
 
           const narrowedDownChunk = await this.narrowDownWordlist(chunk);
+          this.paramMiner.eventEmitter.emit("debug", `Narrowed down to ${narrowedDownChunk.length} parameters`);
+
           narrowedDownChunk.forEach((finding) => {
             this.paramMiner.eventEmitter.emit("finding", finding);
           });
+
+          if (narrowedDownChunk.length === 0) {
+            this.paramMiner.eventEmitter.emit("debug", "False positive detected");
+            this.paramMiner.eventEmitter.emit("logs", "False positive - no parameters could be isolated");
+          }
+        } else {
+          this.paramMiner.eventEmitter.emit("debug", "Anomaly not verified in second request");
         }
       }
 
@@ -105,9 +137,11 @@ export class ParamDiscovery {
       this.paramMiner.eventEmitter.emit("complete");
 
       const endTime = Date.now();
+      const totalTime = endTime - startTime;
+      this.paramMiner.eventEmitter.emit("debug", `Discovery completed in ${totalTime}ms`);
       this.paramMiner.eventEmitter.emit(
         "logs",
-        `Discovery complete in ${endTime - startTime}ms`
+        `Discovery complete in ${totalTime}ms`
       );
     }
   }
@@ -115,6 +149,8 @@ export class ParamDiscovery {
   private async narrowDownWordlist(chunk: Parameter[]): Promise<Finding[]> {
     const findings: Finding[] = [];
     const chunksToProcess: Parameter[][] = [chunk];
+
+    this.paramMiner.eventEmitter.emit("debug", `Starting narrowDownWordlist with ${chunk.length} parameters`);
 
     while (chunksToProcess.length > 0) {
       const currentChunk = chunksToProcess.pop();
@@ -128,11 +164,19 @@ export class ParamDiscovery {
         await this.waitWhilePaused();
       }
 
-      const { response } = await this.paramMiner.requester.sendRequestWithParams(
+      this.paramMiner.eventEmitter.emit("debug", `Processing chunk of ${currentChunk.length} parameters`);
+      const startTime = Date.now();
+
+      const { request, response } = await this.paramMiner.requester.sendRequestWithParams(
         this.paramMiner.target,
         currentChunk,
         "narrower"
       );
+
+      this.paramMiner.eventEmitter.emit("responseReceived", currentChunk.length, { request, response });
+
+      const requestTime = Date.now() - startTime;
+      this.paramMiner.eventEmitter.emit("debug", `Request completed in ${requestTime}ms`);
 
       const anomaly = this.paramMiner.anomalyDetector.hasChanges(
         response,
@@ -140,15 +184,23 @@ export class ParamDiscovery {
       );
 
       if (anomaly) {
+        this.paramMiner.eventEmitter.emit("debug", `Anomaly detected: ${anomaly.type}`);
+
         if (currentChunk.length === 1) {
           const parameter = currentChunk[0];
           if (!parameter) continue;
+
+          this.paramMiner.eventEmitter.emit("debug", `Verifying single parameter: ${parameter.name}`);
+          const verifyStartTime = Date.now();
 
           const { request, response: verifyResponse } = await this.paramMiner.requester.sendRequestWithParams(
             this.paramMiner.target,
             currentChunk,
             "narrower"
           );
+
+          const verifyRequestTime = Date.now() - verifyStartTime;
+          this.paramMiner.eventEmitter.emit("debug", `Verification request completed in ${verifyRequestTime}ms`);
 
           this.paramMiner.eventEmitter.emit(
             "responseReceived",
@@ -162,20 +214,26 @@ export class ParamDiscovery {
           );
 
           if (verifyAnomaly) {
+            this.paramMiner.eventEmitter.emit("debug", `Parameter verified: ${parameter.name} (${verifyAnomaly.type})`);
             findings.push({
               requestResponse: { request, response: verifyResponse },
               parameter,
               anomalyType: verifyAnomaly.type
             });
+          } else {
+            this.paramMiner.eventEmitter.emit("debug", `Parameter verification failed: ${parameter.name}`);
           }
         } else {
           const mid = Math.floor(currentChunk.length / 2);
           const firstHalf = currentChunk.slice(0, mid);
           const secondHalf = currentChunk.slice(mid);
 
+          this.paramMiner.eventEmitter.emit("debug", `Splitting chunk into ${firstHalf.length} and ${secondHalf.length} parameters`);
           chunksToProcess.push(secondHalf);
           chunksToProcess.push(firstHalf);
         }
+      } else {
+        this.paramMiner.eventEmitter.emit("debug", `No anomaly detected for chunk of ${currentChunk.length} parameters`);
       }
 
       await new Promise((resolve) =>
@@ -183,6 +241,7 @@ export class ParamDiscovery {
       );
     }
 
+    this.paramMiner.eventEmitter.emit("debug", `Narrowing complete - found ${findings.length} parameters`);
     return findings;
   }
 

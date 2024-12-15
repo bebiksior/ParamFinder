@@ -9,4 +9,5 @@ export type Settings = {
   performanceMode: boolean;
   learnRequestsCount: number;
   wafDetection: boolean;
+  debug: boolean;
 };

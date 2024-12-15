@@ -220,6 +220,20 @@ export default function SettingsPage() {
           <FormControlLabel
             control={
               <Switch
+                checked={localSettings?.debug ?? false}
+                onChange={(e) =>
+                  setLocalSettings({
+                    ...localSettings!,
+                    debug: e.target.checked,
+                  })
+                }
+              />
+            }
+            label="Debug Mode (extensive logging)"
+          />
+          <FormControlLabel
+            control={
+              <Switch
                 checked={localSettings?.performanceMode ?? false}
                 onChange={(e) =>
                   setLocalSettings({

@@ -172,6 +172,10 @@ export class ParamMiner {
     this.eventEmitter.on("responseReceived", callback);
   }
 
+  onDebug(callback: (debug: ParamMinerEvents["onDebug"]) => void) {
+    this.eventEmitter.on("debug", callback);
+  }
+
   public getID() {
     return this.id;
   }

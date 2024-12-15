@@ -11,6 +11,7 @@ export interface ParamMinerEvents {
   onError: (error: MiningError) => void;
   onStateChange: (state: MiningSessionState) => void;
   onLogs: (logs: string) => void;
+  onDebug: (debug: string) => void;
 }
 
 export type MiningError = {
@@ -32,4 +33,5 @@ export type ParamMinerConfig = {
   concurrency: number;
   performanceMode: boolean;
   wafDetection: boolean;
+  debug: boolean;
 };

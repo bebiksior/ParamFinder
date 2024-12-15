@@ -27,7 +27,8 @@ export type Anomaly = {
 export enum AnomalyType {
   StatusCode = "status-code",
   Headers = "headers",
-  Reflection = "reflection",
+  ReflectionCount = "reflection_count",
   Body = "body",
   Redirect = "redirect",
+  Similarity = "similarity",
 }
