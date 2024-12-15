@@ -21,3 +21,4 @@ Discover hidden parameters straight from Caido!
 - [x] Performance mode where UI only stores and displays findings (ignores requests)
 - [ ] Concurrency
 - [ ] Launch from Replay right-click menu ([#1](https://github.com/bebiksior/ParamFinder/issues/1))
+- [ ] Support for more body formats (currently only JSON and HTML)
