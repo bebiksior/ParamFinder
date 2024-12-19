@@ -1,6 +1,6 @@
 import { Box, Paper, Typography, Button } from "@mui/material";
 import { memo } from "react";
-import { wordlistPresets } from "../../wordlist-presets";
+import { wordlistPresets } from "../../wordlists/wordlist-presets";
 
 interface PresetWordlistsProps {
   onImport: (url: string) => void;

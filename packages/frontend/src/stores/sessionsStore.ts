@@ -6,6 +6,7 @@ import {
   RequestResponse,
   RequestContext,
 } from "shared";
+import { FrontendSDK } from "@/types";
 
 interface SessionsState {
   sessions: Record<string, MiningSession>;
@@ -19,7 +20,7 @@ interface SessionsState {
     requestResponse?: RequestResponse
   ) => void;
   setActiveSession: (id: string | null) => void;
-  deleteSession: (id: string) => void;
+  deleteSession: (id: string, sdk: FrontendSDK) => void;
   updateSessionState: (id: string, sessionState: MiningSessionState) => void;
   addLog: (id: string, log: string) => void;
   updateSessionTotalRequests: (id: string, totalRequests: number) => void;
@@ -128,7 +129,8 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
     set({ activeSessionId: id });
   },
 
-  deleteSession: (id: string) => {
+  deleteSession: (id: string, sdk: FrontendSDK) => {
+    sdk.backend.cancelMining(id);
     set((state) => {
       const { [id]: _, ...sessions } = state.sessions;
       return {

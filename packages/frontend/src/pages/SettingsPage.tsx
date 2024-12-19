@@ -1,17 +1,12 @@
 import {
-  Box,
   Paper,
   Typography,
   TextField,
   Stack,
-  Button,
-  Link,
-  Divider,
-  Avatar,
   FormControlLabel,
   Switch,
+  Divider,
 } from "@mui/material";
-import StarIcon from "@mui/icons-material/Star";
 import {
   useSettings,
   useUpdateSettings,
@@ -20,6 +15,18 @@ import {
 import { StyledBox } from "caido-material-ui";
 import { useState, useEffect, useCallback } from "react";
 import { getSDK } from "@/stores/sdkStore";
+import { About } from "@/components/containers/About";
+
+function formatTimeout(seconds: number): string {
+  if (seconds < 60) return `${seconds} seconds`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return remainingSeconds
+    ? `${minutes} minute${
+        minutes > 1 ? "s" : ""
+      } and ${remainingSeconds} second${remainingSeconds > 1 ? "s" : ""}`
+    : `${minutes} minute${minutes > 1 ? "s" : ""}`;
+}
 
 export default function SettingsPage() {
   const sdk = getSDK();
@@ -29,33 +36,39 @@ export default function SettingsPage() {
   const [localSettings, setLocalSettings] = useState(settings);
 
   useEffect(() => {
-    if (settings) {
-      setLocalSettings(settings);
-    }
+    if (settings) setLocalSettings(settings);
   }, [settings]);
+
+  const handleSettingsChange = useCallback(
+    <T extends number | boolean>(field: keyof typeof settings, value: T) => {
+      if (!localSettings) return;
+      setLocalSettings((prev) => ({ ...prev!, [field]: value }));
+    },
+    [localSettings]
+  );
 
   const debouncedSave = useCallback(
     (newSettings: typeof settings) => {
       if (!newSettings) return;
 
-      if (newSettings.learnRequestsCount < 3) {
-        sdk.window.showToast("Learn Requests Count must be at least 3", {
-          variant: "error",
-        });
-        return;
-      }
+      const validations = [
+        {
+          condition: newSettings.learnRequestsCount < 3,
+          message: "Learn Requests Count must be at least 3",
+        },
+        {
+          condition: newSettings.delay < 0,
+          message: "Request Delay must be at least 0",
+        },
+        {
+          condition: newSettings.timeout < 0,
+          message: "Request Timeout must be at least 0",
+        },
+      ];
 
-      if (newSettings.delay < 0) {
-        sdk.window.showToast("Request Delay must be at least 0", {
-          variant: "error",
-        });
-        return;
-      }
-
-      if (newSettings.timeout < 0) {
-        sdk.window.showToast("Request Timeout must be at least 0", {
-          variant: "error",
-        });
+      const error = validations.find((v) => v.condition);
+      if (error) {
+        sdk.window.showToast(error.message, { variant: "error" });
         return;
       }
 
@@ -72,278 +85,176 @@ export default function SettingsPage() {
       return;
     }
 
-    const timeoutId = setTimeout(() => {
-      debouncedSave(localSettings);
-    }, 200);
-
+    const timeoutId = setTimeout(() => debouncedSave(localSettings), 200);
     return () => clearTimeout(timeoutId);
   }, [localSettings, settings, debouncedSave]);
 
+  if (!localSettings) return null;
+
   return (
     <StyledBox padding={3} className="overflow-y-auto">
-      <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-        <Typography variant="h4">Settings</Typography>
-      </Box>
+      <Typography variant="h4" sx={{ mb: 4, fontWeight: 500 }}>
+        Settings
+      </Typography>
 
-      <Paper sx={{ p: 3, mt: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          General Settings
-        </Typography>
-
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ display: "block", mb: 2, userSelect: "text" }}
-        >
-          Settings are stored in: {settingsPath}
-        </Typography>
-
-        <Stack
-          spacing={3}
-          sx={{ maxWidth: 400, backgroundColor: "transparent" }}
-        >
-          <TextField
-            label="Request Delay (ms)"
-            type="number"
-            value={localSettings?.delay ?? ""}
-            onChange={(e) =>
-              setLocalSettings({
-                ...localSettings!,
-                delay: Number(e.target.value),
-              })
-            }
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label="Concurrency"
-            type="number"
-            value={localSettings?.concurrency ?? ""}
-            onChange={(e) =>
-              setLocalSettings({
-                ...localSettings!,
-                concurrency: Number(e.target.value),
-              })
-            }
-            fullWidth
-            disabled
-            helperText="Concurrency is not implemented yet"
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label="Request Timeout (ms)"
-            type="number"
-            value={localSettings?.timeout ?? ""}
-            onChange={(e) =>
-              setLocalSettings({
-                ...localSettings!,
-                timeout: Number(e.target.value),
-              })
-            }
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={localSettings?.autoDetectMaxSize ?? false}
-                onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings!,
-                    autoDetectMaxSize: e.target.checked,
-                    maxQuerySize: e.target.checked
-                      ? undefined
-                      : localSettings?.maxQuerySize,
-                  })
-                }
-              />
-            }
-            label="Auto Detect Max Request Size"
-          />
-          {!localSettings?.autoDetectMaxSize && (
-            <>
-              <TextField
-                label="Max Request Size"
-                type="number"
-                value={localSettings?.maxQuerySize ?? ""}
-                onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings!,
-                    maxQuerySize: Number(e.target.value),
-                  })
-                }
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-              <TextField
-                label="Max Header Size"
-                type="number"
-                value={localSettings?.maxHeaderSize ?? ""}
-                onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings!,
-                    maxHeaderSize: Number(e.target.value),
-                  })
-                }
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-              <TextField
-                label="Max Body Size"
-                type="number"
-                value={localSettings?.maxBodySize ?? ""}
-                onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings!,
-                    maxBodySize: Number(e.target.value),
-                  })
-                }
-                fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-            </>
-          )}
-          <FormControlLabel
-            control={
-              <Switch
-                checked={localSettings?.wafDetection ?? false}
-                onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings!,
-                    wafDetection: e.target.checked,
-                  })
-                }
-              />
-            }
-            label="WAF Detection"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={localSettings?.debug ?? false}
-                onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings!,
-                    debug: e.target.checked,
-                  })
-                }
-              />
-            }
-            label="Debug Mode (extensive logging)"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={localSettings?.performanceMode ?? false}
-                onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings!,
-                    performanceMode: e.target.checked,
-                  })
-                }
-              />
-            }
-            label="Performance Mode (receive only findings)"
-          />
-          <TextField
-            label="Learn Requests Count"
-            type="number"
-            value={localSettings?.learnRequestsCount ?? ""}
-            onChange={(e) =>
-              setLocalSettings({
-                ...localSettings!,
-                learnRequestsCount: Number(e.target.value),
-              })
-            }
-            helperText="Minimum value is 3. Recommended value is 8 or more."
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-          />
-        </Stack>
-      </Paper>
-
-      <Paper sx={{ p: 3, mt: 3 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 1,
-          }}
-        >
-          <Typography
-            variant="h6"
-            gutterBottom
-            fontWeight="bold"
-            color="primary"
-          >
-            About ParamFinder
+      <Stack direction="row" spacing={4} sx={{ mb: 4 }}>
+        <Paper sx={{ p: 4, flex: 1 }}>
+          <Typography variant="h6" gutterBottom sx={{ mb: 3, fontWeight: 500 }}>
+            Request Settings
           </Typography>
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={<StarIcon />}
-            href="https://github.com/bebiksior/ParamFinder"
-            target="_blank"
-            rel="noopener noreferrer"
-            size="small"
-          >
-            Star on GitHub
-          </Button>
-        </Box>
-        <Typography variant="body1">
-          <strong>ParamFinder</strong> is a Caido plugin designed to help you
-          discover hidden parameters in web applications. You can find the
-          source code on{" "}
-          <Link
-            href="https://github.com/bebiksior/ParamFinder"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub
-          </Link>
-          .
-        </Typography>
-        <Typography variant="body1" sx={{ mt: 1 }}>
-          Please note that ParamFinder is currently in beta, and some features
-          like concurrency are not implemented yet. Your feedback and bug
-          reports are highly appreciated!
-        </Typography>
-        <Typography variant="body1" sx={{ mt: 1 }}>
-          Feel free to contribute to the project :D You can submit feature
-          requests and report bugs via the GitHub issues page. I'm always
-          looking for new ideas and improvements!
-        </Typography>
-        <Divider sx={{ my: 2 }} />
-        <Typography variant="body2" color="textSecondary">
-          Your feedback and suggestions are always welcome. My X profile is{" "}
-          <Link
-            href="https://x.com/bebiksior"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            bebiksior
-          </Link>{" "}
-          and my discord handle is <b>bebiks</b>
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
-          <Avatar
-            src="https://avatars.githubusercontent.com/u/71410238?v=4&size=30"
-            alt="bebiks avatar"
-            sx={{ mr: 1, width: 30, height: 30 }}
-          />
-          <Typography variant="body2">
-            Made with ❤️ by{" "}
-            <Link
-              href="https://x.com/bebiksior"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              bebiks
-            </Link>
+          <Stack spacing={3} sx={{ backgroundColor: "transparent" }}>
+            <TextField
+              label="Request Delay (ms)"
+              type="number"
+              value={localSettings.delay}
+              onChange={(e) =>
+                handleSettingsChange("delay", Number(e.target.value))
+              }
+              fullWidth
+            />
+            <TextField
+              label="Request Timeout (seconds)"
+              type="number"
+              value={localSettings.timeout}
+              onChange={(e) =>
+                handleSettingsChange("timeout", Number(e.target.value))
+              }
+              fullWidth
+              helperText={
+                localSettings.timeout <= 0
+                  ? "Invalid value - timeout must be greater than 0"
+                  : `Equivalent to ${formatTimeout(localSettings.timeout)}`
+              }
+            />
+            <TextField
+              label="Learn Requests Count"
+              type="number"
+              value={localSettings.learnRequestsCount}
+              onChange={(e) =>
+                handleSettingsChange(
+                  "learnRequestsCount",
+                  Number(e.target.value)
+                )
+              }
+              helperText="Minimum value is 3. Recommended value is 8 or more."
+              fullWidth
+            />
+            <TextField
+              label="Concurrency"
+              type="number"
+              value={localSettings.concurrency}
+              onChange={(e) =>
+                handleSettingsChange("concurrency", Number(e.target.value))
+              }
+              fullWidth
+              disabled
+              helperText="Concurrency is not implemented yet"
+            />
+          </Stack>
+        </Paper>
+
+        <Paper sx={{ p: 4, flex: 1 }}>
+          <Typography variant="h6" gutterBottom sx={{ mb: 3, fontWeight: 500 }}>
+            Advanced Settings
           </Typography>
-        </Box>
-      </Paper>
+          <Stack spacing={3} sx={{ backgroundColor: "transparent" }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={localSettings.autoDetectMaxSize}
+                  onChange={(e) =>
+                    setLocalSettings({
+                      ...localSettings,
+                      autoDetectMaxSize: e.target.checked,
+                      maxQuerySize: e.target.checked
+                        ? undefined
+                        : localSettings.maxQuerySize,
+                    })
+                  }
+                />
+              }
+              label="Auto Detect Max Request Size"
+            />
+
+            {!localSettings.autoDetectMaxSize && (
+              <Stack spacing={3} sx={{ backgroundColor: "transparent" }}>
+                <TextField
+                  label="Max Request Size"
+                  type="number"
+                  value={localSettings.maxQuerySize ?? ""}
+                  onChange={(e) =>
+                    handleSettingsChange("maxQuerySize", Number(e.target.value))
+                  }
+                  fullWidth
+                />
+                <TextField
+                  label="Max Header Size"
+                  type="number"
+                  value={localSettings.maxHeaderSize ?? ""}
+                  onChange={(e) =>
+                    handleSettingsChange(
+                      "maxHeaderSize",
+                      Number(e.target.value)
+                    )
+                  }
+                  fullWidth
+                />
+                <TextField
+                  label="Max Body Size"
+                  type="number"
+                  value={localSettings.maxBodySize ?? ""}
+                  onChange={(e) =>
+                    handleSettingsChange("maxBodySize", Number(e.target.value))
+                  }
+                  fullWidth
+                />
+              </Stack>
+            )}
+
+            <Divider sx={{ my: 2 }} />
+
+            <Stack spacing={2} sx={{ backgroundColor: "transparent" }}>
+              {[
+                {
+                  field: "wafDetection" as const,
+                  label: "WAF Detection",
+                },
+                {
+                  field: "debug" as const,
+                  label: "Debug Mode (extensive logging)",
+                },
+                {
+                  field: "performanceMode" as const,
+                  label: "Performance Mode (receive only findings)",
+                },
+              ].map(({ field, label }) => (
+                <FormControlLabel
+                  key={field}
+                  control={
+                    <Switch
+                      checked={localSettings[field]}
+                      onChange={(e) =>
+                        handleSettingsChange(field, e.target.checked)
+                      }
+                    />
+                  }
+                  label={label}
+                />
+              ))}
+            </Stack>
+          </Stack>
+        </Paper>
+      </Stack>
+
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ display: "block", mb: 4, userSelect: "text" }}
+      >
+        Settings are stored in: {settingsPath}
+      </Typography>
+
+      <About />
     </StyledBox>
   );
 }

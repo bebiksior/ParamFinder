@@ -1,12 +1,13 @@
 import { Menu, MenuItem } from "@mui/material";
 import { useState, MouseEvent, memo } from "react";
-import { DeleteSweep } from "@mui/icons-material";
 import { StyledBox } from "caido-material-ui";
 import { Tab } from "../../common/Tab";
 import { useSessionsStore } from "@/stores/sessionsStore";
 import { useShallow } from "zustand/shallow";
+import { getSDK } from "@/stores/sdkStore";
 
 const SessionTabs = memo(function SessionTabs() {
+  const sdk = getSDK();
   const sessionIds = useSessionsStore(
     useShallow((state) => Object.keys(state.sessions))
   );
@@ -17,15 +18,12 @@ const SessionTabs = memo(function SessionTabs() {
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
     mouseY: number;
+    sessionId: string;
   } | null>(null);
 
-  const handleContextMenu = (event: MouseEvent) => {
+  const handleContextMenu = (event: MouseEvent, sessionId: string) => {
     event.preventDefault();
-    setContextMenu(
-      contextMenu === null
-        ? { mouseX: event.clientX, mouseY: event.clientY }
-        : null
-    );
+    setContextMenu({ mouseX: event.clientX, mouseY: event.clientY, sessionId });
   };
 
   const handleClose = () => {
@@ -33,7 +31,21 @@ const SessionTabs = memo(function SessionTabs() {
   };
 
   const handleClearAll = () => {
-    sessionIds.forEach((id) => deleteSession(id));
+    sessionIds.forEach((id) => deleteSession(id, sdk));
+    handleClose();
+  };
+
+  const handleCloseOthers = () => {
+    if (!contextMenu) return;
+
+    sessionIds.forEach((id) => {
+      if (id !== contextMenu.sessionId) {
+        if (id === activeSessionId) {
+          setActiveSession(contextMenu.sessionId);
+        }
+        deleteSession(id, sdk);
+      }
+    });
     handleClose();
   };
 
@@ -41,7 +53,7 @@ const SessionTabs = memo(function SessionTabs() {
     if (id === activeSessionId) {
       setActiveSession(null);
     }
-    deleteSession(id);
+    deleteSession(id, sdk);
   };
 
   if (sessionIds.length === 0) return null;
@@ -60,23 +72,27 @@ const SessionTabs = memo(function SessionTabs() {
           onClose={() => handleDelete(id)}
           isSelected={id === activeSessionId}
           onSelect={() => setActiveSession(id)}
-          onContextMenu={handleContextMenu}
+          onContextMenu={(e) => handleContextMenu(e, id)}
         />
       ))}
       <Menu
         open={contextMenu !== null}
         onClose={handleClose}
+        MenuListProps={{
+          sx: {
+            padding: 0,
+          },
+        }}
         anchorReference="anchorPosition"
         anchorPosition={
           contextMenu !== null
             ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
             : undefined
         }
+        transitionDuration={0}
       >
-        <MenuItem onClick={handleClearAll}>
-          <DeleteSweep sx={{ mr: 1 }} />
-          Clear All Sessions
-        </MenuItem>
+        <MenuItem onClick={handleCloseOthers}>Close Others</MenuItem>
+        <MenuItem onClick={handleClearAll}>Clear All</MenuItem>
       </Menu>
     </StyledBox>
   );

@@ -21,7 +21,7 @@ export class ParamDiscovery {
   }
 
   public async startDiscovery() {
-    const timeout = this.paramMiner.config.timeout;
+    const timeout = this.paramMiner.config.timeout * 1000;
     const startTime = Date.now();
 
     this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Starting discovery with timeout ${timeout}ms`);

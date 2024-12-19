@@ -21,8 +21,8 @@ const sizeConfigs: Record<string, SizeConfig> = {
     getLogMessage: (size) => `${size} headers`,
   },
   query: {
-    sizes: [14000, 8000, 4000, 2000],
-    defaultSize: 2000,
+    sizes: [14000, 8000, 4000, 2000, 500],
+    defaultSize: 500,
     generateParams: (size) => [{
       name: "test",
       value: randomString(size),
