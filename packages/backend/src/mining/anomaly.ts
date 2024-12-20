@@ -1,5 +1,4 @@
 import {
-  MiningSessionState,
   Parameter,
   RequestResponse,
   Response,
@@ -8,6 +7,12 @@ import { Anomaly, AnomalyType, StableFactors } from "shared";
 import { DiffingSystem } from "../util/diffing";
 import { stringSimilarity, randomString } from "../util/helper";
 import { ParamMiner } from "./param-miner";
+
+const defaultUnstableHeaders = new Set<string>([
+  "Content-Length",
+  "Date",
+  "CF-Cache-Status"
+]);
 
 export class AnomalyDetector {
   private stableFactors: StableFactors | undefined;
@@ -151,12 +156,9 @@ export class AnomalyDetector {
     }[] = [];
 
     for (let i = 0; i < learnRequestsCount; i++) {
-      if (this.paramMiner.state === MiningSessionState.Paused) {
-        await this.paramMiner.paramDiscovery.waitWhilePaused();
-      }
-
-      if (this.paramMiner.state === MiningSessionState.Canceled) {
-        break;
+      if (!await this.paramMiner.stateManager.continueOrWait()) {
+        this.paramMiner.eventEmitter.emit("debug", "[anomaly.ts] Learning phase canceled or errored");
+        throw new Error("Learning phase canceled");
       }
 
       const params = this.getParams(i + 1);
@@ -169,6 +171,11 @@ export class AnomalyDetector {
           "learning"
         );
 
+      if (!await this.paramMiner.stateManager.continueOrWait()) {
+        this.paramMiner.eventEmitter.emit("debug", "[anomaly.ts] Learning phase canceled after request");
+        throw new Error("Learning phase canceled");
+      }
+
       this.paramMiner.eventEmitter.emit("responseReceived", 0, requestResponse);
 
       learnResponses.push({
@@ -177,6 +184,11 @@ export class AnomalyDetector {
       });
 
       await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    if (!await this.paramMiner.stateManager.continueOrWait()) {
+      this.paramMiner.eventEmitter.emit("debug", "[anomaly.ts] Learning phase canceled before processing responses");
+      throw new Error("Learning phase canceled");
     }
 
     this.initialRequestResponse = learnResponses[0]?.requestResponse;
@@ -247,16 +259,6 @@ export class AnomalyDetector {
 
     this.stableFactors = stable;
     this.paramMiner.eventEmitter.emit("debug", "[anomaly.ts] Learning phase completed");
-    this.paramMiner.sdk.console.log(
-      JSON.stringify(
-        {
-          ...stable,
-          unstableHeaders: Array.from(stable.unstableHeaders),
-        },
-        null,
-        2
-      )
-    );
   }
 
   private checkFactors(
@@ -271,7 +273,7 @@ export class AnomalyDetector {
       similarityStable: true,
       reflectionsCount: 0,
       statusCode: response.status,
-      unstableHeaders: new Set<string>(),
+      unstableHeaders: new Set<string>(defaultUnstableHeaders),
       similarity: 1
     } as StableFactors;
 
@@ -300,8 +302,30 @@ export class AnomalyDetector {
     }
 
     for (const param of parameters) {
-      if (responseBody.includes(param.value)) {
-        stable.reflectionsCount = responseBody.split(param.value).length - 1;
+      const variations = [param.value];
+
+      const encoded = encodeURIComponent(param.value);
+      if (encoded !== param.value) {
+        variations.push(encoded);
+      }
+
+      if (param.value.includes('<') || param.value.includes('>')) {
+        variations.push(param.value.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+      }
+
+      if (param.value.includes('"')) {
+        variations.push(param.value.replace(/"/g, '&quot;'));
+      }
+
+      if (param.value.includes("'")) {
+        variations.push(param.value.replace(/'/g, '&#39;'));
+      }
+
+      for (const variation of variations) {
+        if (responseBody.includes(variation)) {
+          const reflections = responseBody.split(variation).length - 1;
+          stable.reflectionsCount = Math.max(stable.reflectionsCount, reflections);
+        }
       }
     }
 

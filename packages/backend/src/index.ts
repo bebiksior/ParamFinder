@@ -88,7 +88,7 @@ async function startMining(
     sdk.api.send(
       "paramfinder:new",
       sessionID,
-      paramMiner.config.learnRequestsCount
+      paramMiner.initialRequestAmount()
     );
 
     paramMiner.onError((err) => {

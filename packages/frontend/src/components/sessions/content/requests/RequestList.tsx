@@ -117,6 +117,7 @@ export default function RequestList() {
                   Time
                 </TableSortLabel>
               </TableCell>
+              <TableCell>Context</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -132,6 +133,7 @@ export default function RequestList() {
                 <TableCell>{row.response.status}</TableCell>
                 <TableCell>{row.response.raw.length}</TableCell>
                 <TableCell>{row.response.time}ms</TableCell>
+                <TableCell>{row.request.context}</TableCell>
               </TableRow>
             ))}
           </TableBody>

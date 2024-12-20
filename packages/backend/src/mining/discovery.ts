@@ -6,18 +6,11 @@ import { ParamMiner } from "./param-miner";
 export class ParamDiscovery {
   private paramMiner: ParamMiner;
   private lastWordlistIndex: number;
-
   private readonly PARAMS_VALUES_SIZE = 8;
 
   constructor(paramMiner: ParamMiner) {
     this.paramMiner = paramMiner;
     this.lastWordlistIndex = 0;
-  }
-
-  public async waitWhilePaused(): Promise<void> {
-    while (this.paramMiner.state === MiningSessionState.Paused) {
-      await new Promise((resolve) => setTimeout(resolve, 250));
-    }
   }
 
   public async startDiscovery() {
@@ -27,14 +20,9 @@ export class ParamDiscovery {
     this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Starting discovery with timeout ${timeout}ms`);
 
     while (this.hasMoreParameters()) {
-      if (this.paramMiner.state === MiningSessionState.Canceled) {
-        this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] Discovery canceled");
+      if (!await this.paramMiner.stateManager.continueOrWait()) {
+        this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] Discovery canceled or errored");
         return;
-      }
-
-      if (this.paramMiner.state === MiningSessionState.Paused) {
-        this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] Discovery paused");
-        await this.waitWhilePaused();
       }
 
       const currentTime = Date.now();
@@ -67,6 +55,11 @@ export class ParamDiscovery {
           "discovery"
         );
 
+      if (!await this.paramMiner.stateManager.continueOrWait()) {
+        this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] Discovery canceled after request");
+        return;
+      }
+
       const requestTime = Date.now() - requestStartTime;
       this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Request completed in ${requestTime}ms`);
 
@@ -94,6 +87,12 @@ export class ParamDiscovery {
           chunk,
           "narrower"
         );
+
+        if (!await this.paramMiner.stateManager.continueOrWait()) {
+          this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] Discovery canceled during verification");
+          return;
+        }
+
         const verifyTime = Date.now() - verifyStartTime;
         this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Verification request completed in ${verifyTime}ms`);
 
@@ -135,7 +134,7 @@ export class ParamDiscovery {
       );
     }
 
-    if (this.paramMiner.state !== MiningSessionState.Canceled) {
+    if (await this.paramMiner.stateManager.continueOrWait()) {
       this.paramMiner.updateState(MiningSessionState.Completed);
       this.paramMiner.eventEmitter.emit("complete");
 
@@ -159,12 +158,9 @@ export class ParamDiscovery {
       const currentChunk = chunksToProcess.pop();
       if (!currentChunk || currentChunk.length === 0) continue;
 
-      if (this.paramMiner.state === MiningSessionState.Canceled) {
+      if (!await this.paramMiner.stateManager.continueOrWait()) {
+        this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] Narrowing canceled");
         return findings;
-      }
-
-      if (this.paramMiner.state === MiningSessionState.Paused) {
-        await this.waitWhilePaused();
       }
 
       this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Processing chunk of ${currentChunk.length} parameters`);
@@ -175,6 +171,11 @@ export class ParamDiscovery {
         currentChunk,
         "narrower"
       );
+
+      if (!await this.paramMiner.stateManager.continueOrWait()) {
+        this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] Narrowing canceled after request");
+        return findings;
+      }
 
       this.paramMiner.eventEmitter.emit("responseReceived", currentChunk.length, { request, response });
 
@@ -201,6 +202,11 @@ export class ParamDiscovery {
             currentChunk,
             "narrower"
           );
+
+          if (!await this.paramMiner.stateManager.continueOrWait()) {
+            this.paramMiner.eventEmitter.emit("debug", "[discovery.ts] Narrowing canceled during verification");
+            return findings;
+          }
 
           const verifyRequestTime = Date.now() - verifyStartTime;
           this.paramMiner.eventEmitter.emit("debug", `[discovery.ts] Verification request completed in ${verifyRequestTime}ms`);
@@ -248,9 +254,6 @@ export class ParamDiscovery {
     return findings;
   }
 
-  /**
-   * Calculates next chunk of parameters to test based on attack type and size limits
-   */
   private getNextWordlistChunk(): Parameter[] {
     if (!this.paramMiner) {
       throw new Error("ParamMiner is not initialized");
@@ -311,9 +314,6 @@ export class ParamDiscovery {
     return parameterChunk;
   }
 
-  /**
-   * Calculates total number of requests needed to test all parameters
-   */
   public calculateTotalRequests(): number {
     if (!this.paramMiner) {
       throw new Error("ParamMiner is not initialized");
@@ -355,7 +355,7 @@ export class ParamDiscovery {
       totalRequests++;
     }
 
-    return totalRequests + this.paramMiner.config.learnRequestsCount;
+    return totalRequests + this.paramMiner.initialRequestAmount();
   }
 
   private randomParameterValue(): string {
@@ -375,6 +375,8 @@ export class ParamDiscovery {
   }
 
   public resume() {
-    this.paramMiner.updateState(this.paramMiner.lastStateChange);
+    const phase = this.paramMiner.stateManager.getPhase();
+    const newState = phase === "learning" ? MiningSessionState.Learning : MiningSessionState.Running;
+    this.paramMiner.updateState(newState, phase);
   }
 }
