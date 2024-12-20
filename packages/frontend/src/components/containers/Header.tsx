@@ -1,9 +1,9 @@
 import { Tab } from "@mui/material";
-
 import { Tabs } from "@mui/material";
 import RadarIcon from "@mui/icons-material/Radar";
 import SettingsIcon from "@mui/icons-material/Settings";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import { QuestionMark } from "@mui/icons-material";
 
 interface HeaderProps {
   activeComponent: string;
@@ -36,6 +36,12 @@ export default function Header({
         iconPosition="start"
         label="Settings"
         icon={<SettingsIcon />}
+      />
+      <Tab
+        value="Usage"
+        iconPosition="start"
+        label="Usage"
+        icon={<QuestionMark />}
       />
     </Tabs>
   );
