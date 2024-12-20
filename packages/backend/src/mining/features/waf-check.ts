@@ -47,7 +47,7 @@ export async function checkForWAF(paramMiner: ParamMiner): Promise<Response | nu
       }
 
       paramMiner.sdk.console.log(`Pattern "${pattern}" did not trigger WAF`);
-
+      await new Promise((resolve) => setTimeout(resolve, paramMiner.config.delayBetweenRequests));
     } catch (error) {
       requestsSent++;
       paramMiner.sdk.console.log(

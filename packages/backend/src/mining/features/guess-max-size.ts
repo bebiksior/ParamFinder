@@ -76,6 +76,8 @@ export async function guessMaxSize(paramMiner: ParamMiner): Promise<number> {
         lastSuccessfulSize = size;
         break;
       }
+
+      await new Promise((resolve) => setTimeout(resolve, paramMiner.config.delayBetweenRequests));
     } catch (error) {
       requestsSent++;
       continue;

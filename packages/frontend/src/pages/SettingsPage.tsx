@@ -17,15 +17,25 @@ import { useState, useEffect, useCallback } from "react";
 import { getSDK } from "@/stores/sdkStore";
 import { About } from "@/components/containers/About";
 
-function formatTimeout(seconds: number): string {
-  if (seconds < 60) return `${seconds} seconds`;
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return remainingSeconds
-    ? `${minutes} minute${
-        minutes > 1 ? "s" : ""
-      } and ${remainingSeconds} second${remainingSeconds > 1 ? "s" : ""}`
-    : `${minutes} minute${minutes > 1 ? "s" : ""}`;
+function formatTimeout(milliseconds: number): string {
+  if (milliseconds < 1000) return `${milliseconds} milliseconds`;
+
+  const minutes = Math.floor(milliseconds / 60000);
+  const seconds = Math.floor((milliseconds % 60000) / 1000);
+  const remainingMilliseconds = milliseconds % 1000;
+
+  const parts = [];
+  if (minutes > 0) {
+    parts.push(`${minutes} minute${minutes > 1 ? 's' : ''}`);
+  }
+  if (seconds > 0) {
+    parts.push(`${seconds} second${seconds > 1 ? 's' : ''}`);
+  }
+  if (remainingMilliseconds > 0) {
+    parts.push(`${remainingMilliseconds} milliseconds`);
+  }
+
+  return parts.join(' and ');
 }
 
 export default function SettingsPage() {
@@ -110,6 +120,11 @@ export default function SettingsPage() {
               onChange={(e) =>
                 handleSettingsChange("delay", Number(e.target.value))
               }
+              helperText={
+                localSettings.delay <= 0
+                  ? "Invalid value - delay must be greater than 0"
+                  : `Equivalent to ${formatTimeout(localSettings.delay)}`
+              }
               fullWidth
             />
             <TextField
@@ -123,7 +138,7 @@ export default function SettingsPage() {
               helperText={
                 localSettings.timeout <= 0
                   ? "Invalid value - timeout must be greater than 0"
-                  : `Equivalent to ${formatTimeout(localSettings.timeout)}`
+                  : `Equivalent to ${formatTimeout(localSettings.timeout * 1000)}`
               }
             />
             <TextField
