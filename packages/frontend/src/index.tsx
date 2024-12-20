@@ -3,7 +3,12 @@ import { FrontendSDK } from "./types";
 import App from "./App";
 import { setSDK } from "./stores/sdkStore";
 import { setupEvents } from "./events";
-import { generateID, handleBackendCall, parseRequest } from "./utils/utils";
+import {
+  generateID,
+  getSelectedRequest,
+  handleBackendCall,
+  parseRequest,
+} from "./utils/utils";
 import { Caido } from "@caido/sdk-frontend";
 import { API, BackendEvents } from "backend";
 import { CommandContext } from "@caido/sdk-frontend/src/types";
@@ -71,33 +76,49 @@ function setupCommands(sdk: FrontendSDK) {
 
     async function handleRequestRowContext(requests: any[]) {
       for (const req of requests) {
-        const request = await handleBackendCall(sdk.backend.getRequest(req.id), sdk);
-        const settings = await handleBackendCall(sdk.backend.getSettings(), sdk);
+        const request = await handleBackendCall(
+          sdk.backend.getRequest(req.id),
+          sdk
+        );
+        const settings = await handleBackendCall(
+          sdk.backend.getSettings(),
+          sdk
+        );
         await handleMining(request, settings);
       }
     }
 
-    async function handleSingleRequest(context: any) {
+    async function handleSingleRequest(request: {
+      raw: string;
+      isTls: boolean;
+      host: string;
+      port: number;
+      path: string;
+      query: string;
+    }) {
       const settings = await handleBackendCall(sdk.backend.getSettings(), sdk);
-      const parsedRequest = parseRequest(context.request.raw);
+      const parsedRequest = parseRequest(request.raw);
 
-      const request: Request = {
+      const _request: Request = {
         ...parsedRequest,
         id: generateID(),
-        url: `${context.request.isTls ? "https" : "http"}://${context.request.host}:${context.request.port}${context.request.path}${context.request.query}`,
-        query: context.request.query,
-        host: context.request.host,
-        port: context.request.port,
-        tls: context.request.isTls,
+        url: `${request.isTls ? "https" : "http"}://${request.host}:${
+          request.port
+        }${request.path}${request.query}`,
+        query: request.query,
+        host: request.host,
+        port: request.port,
+        tls: request.isTls,
         context: "discovery",
-        raw: context.request.raw,
+        raw: request.raw,
       };
 
-      await handleMining(request, settings);
+      await handleMining(_request, settings);
     }
 
     sdk.commands.register(commandId, {
       name: displayName,
+      group: "Param Finder",
       run: async (context: CommandContext) => {
         sdk.navigation.goTo("/paramfinder");
 
@@ -107,7 +128,22 @@ function setupCommands(sdk: FrontendSDK) {
         }
 
         if (context.type === "RequestContext") {
-          await handleSingleRequest(context);
+          await handleSingleRequest(context.request);
+        }
+
+        if (context.type === "BaseContext") {
+          const request = getSelectedRequest(sdk);
+          if (request) {
+            const parsedRequest = parseRequest(request.raw);
+            await handleSingleRequest({
+              raw: request.raw,
+              isTls: request.isTLS,
+              host: parsedRequest.host,
+              port: request.port,
+              path: parsedRequest.path,
+              query: parsedRequest.query,
+            });
+          }
         }
       },
     });
@@ -123,6 +159,8 @@ function setupCommands(sdk: FrontendSDK) {
       commandId,
       leadingIcon: "fas fa-search",
     });
+
+    sdk.commandPalette.register(commandId);
   });
 }
 

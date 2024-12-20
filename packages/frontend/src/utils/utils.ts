@@ -110,3 +110,64 @@ export function randomString(length: number) {
   }
   return result;
 }
+
+export function getSelectedRequest(sdk: FrontendSDK) {
+  function getPortAndTLS(url: string) {
+    const isSecure = url.startsWith("https://");
+    let portNumber = isSecure ? 443 : 80;
+
+    try {
+      const urlObj = new URL(url);
+      if (urlObj.port) {
+        portNumber = parseInt(urlObj.port);
+      }
+    } catch {}
+
+    return {
+      isTLS: isSecure,
+      port: portNumber
+    };
+  }
+
+  switch (location.hash) {
+    case "#/http-history": {
+      const { innerText: historyRaw } = document.querySelector(
+        "[data-language='http-request']"
+      ) as HTMLElement;
+
+      const { innerText: historyUrl } = document.querySelector(
+        ".c-request-header__label"
+      ) as HTMLElement;
+
+      const { isTLS, port } = getPortAndTLS(historyUrl);
+
+      return {
+        raw: historyRaw,
+        isTLS,
+        port,
+      };
+    }
+
+    case "#/replay": {
+      const { value: replayUrl } = document.querySelector(
+        ".c-replay-session-toolbar__connection-info input"
+      ) as HTMLInputElement;
+
+      const { innerText: replayRaw } = document.querySelector(
+        "[data-language='http-request']"
+      ) as HTMLElement;
+
+      const { isTLS, port } = getPortAndTLS(replayUrl);
+
+      return {
+        raw: replayRaw,
+        isTLS,
+        port,
+      };
+    }
+
+    default:
+      console.error(`Can't obtain selected request from ${location.hash}`);
+      throw new Error("Can't obtain selected request");
+  }
+}
