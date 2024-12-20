@@ -1,5 +1,5 @@
 import { FrontendSDK } from "@/types";
-import { Result } from "shared";
+import { Request, Result } from "shared";
 
 export async function handleBackendCall<T>(
   promise: Promise<Result<T>>,
@@ -24,20 +24,19 @@ export const uint8ArrayToString = (uint8Array: Uint8Array | undefined) => {
 
 /* Request parser */
 export function parseRequest(raw: string): {
-  host: string;
   path: string;
-  query?: string;
+  query: string;
   method: string;
   headers: Record<string, Array<string>>;
   body: string;
 } {
   if (!raw.trim()) {
     return {
-      host: "",
       path: "",
       method: "",
       headers: {},
       body: "",
+      query: "",
     };
   }
 
@@ -46,11 +45,11 @@ export function parseRequest(raw: string): {
 
   if (!firstLine) {
     return {
-      host: "",
       path: "",
       method: "",
       headers: {},
       body: lines.slice(1).join("\n").trim(),
+      query: "",
     };
   }
 
@@ -62,7 +61,7 @@ export function parseRequest(raw: string): {
 
   const urlParts = fullPath.split("?");
   const path = urlParts[0];
-  const query = urlParts[1];
+  const query = urlParts[1] ?? "";
 
   const headers: Record<string, Array<string>> = {};
   let i = 1;
@@ -79,14 +78,12 @@ export function parseRequest(raw: string): {
     i++;
   }
 
-  const host = headers["Host"]?.[0] ?? "";
   const body = lines
     .slice(i + 1)
     .join("\n")
     .trim();
 
   return {
-    host,
     path,
     ...(query && { query }),
     method,
@@ -129,7 +126,13 @@ export function getSelectedRequest(sdk: FrontendSDK) {
     };
   }
 
+  function getHost(url: string) {
+    const urlObj = new URL(url);
+    return urlObj.host.split(":")[0];
+  }
+
   switch (location.hash) {
+    case "#/automate":
     case "#/http-history": {
       const { innerText: historyRaw } = document.querySelector(
         "[data-language='http-request']"
@@ -145,6 +148,7 @@ export function getSelectedRequest(sdk: FrontendSDK) {
         raw: historyRaw,
         isTLS,
         port,
+        host: getHost(historyUrl),
       };
     }
 
@@ -163,6 +167,7 @@ export function getSelectedRequest(sdk: FrontendSDK) {
         raw: replayRaw,
         isTLS,
         port,
+        host: getHost(replayUrl),
       };
     }
 

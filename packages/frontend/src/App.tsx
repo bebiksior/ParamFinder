@@ -9,6 +9,7 @@ import "allotment/dist/style.css";
 import "./styles/style.css";
 import Header from "./components/containers/Header";
 import { usePageData } from './hooks/usePageData';
+import { UsagePage } from "./pages/UsagePage";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,8 @@ export default function App() {
         return <WordlistsPage />;
       case "Settings":
         return <SettingsPage />;
+      case "Usage":
+        return <UsagePage />;
     }
   };
 

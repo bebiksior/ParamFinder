@@ -203,13 +203,15 @@ async function getRequest(sdk: SDK<API>, id: string): Promise<Result<Request>> {
 
     const spec = requestResponse.request.toSpec();
 
+    const url = `${spec.getTls() ? "https" : "http"}://${spec.getHost()}:${
+      spec.getPort()
+    }${spec.getPath()}${spec.getQuery()}`;
+
     return ok({
       id: generateID(),
       host: spec.getHost(),
       port: spec.getPort(),
-      url: `${
-        spec.getTls() ? "https" : "http"
-      }://${spec.getHost()}:${spec.getPort()}${spec.getPath()}${spec.getQuery()}`,
+      url,
       path: spec.getPath(),
       query: spec.getQuery(),
       method: spec.getMethod(),

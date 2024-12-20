@@ -15,7 +15,6 @@ import {
 import { StyledBox } from "caido-material-ui";
 import { useState, useEffect, useCallback } from "react";
 import { getSDK } from "@/stores/sdkStore";
-import { About } from "@/components/containers/About";
 
 function formatTimeout(milliseconds: number): string {
   if (milliseconds < 1000) return `${milliseconds} milliseconds`;
@@ -268,8 +267,6 @@ export default function SettingsPage() {
       >
         Settings are stored in: {settingsPath}
       </Typography>
-
-      <About />
     </StyledBox>
   );
 }
