@@ -215,12 +215,6 @@ export class AnomalyDetector {
     stable.similarityStable = similarity > 0.98;
     stable.similarity = similarity;
 
-    if (!stable.similarityStable) {
-      this.paramMiner.sdk.console.log(
-        `[!!!] Response similarity ${similarity} is below threshold 0.98`
-      );
-    }
-
     for (let i = 2; i < learnRequestsCount; i++) {
       const learnResponse = learnResponses[i];
       if (!learnResponse) {
@@ -246,15 +240,8 @@ export class AnomalyDetector {
       stable.redirect = newFactors.redirect;
 
       if (stable.reflectionsCount != newFactors.reflectionsCount) {
-        this.paramMiner.sdk.console.log(
-          "[!!!] Looks like reflections are not stable."
-        );
         stable.reflectionStable = false;
       }
-    }
-
-    if (stable.bodyStable) {
-      this.paramMiner.sdk.console.log("[!!!] Body is stable.");
     }
 
     this.stableFactors = stable;
@@ -292,12 +279,10 @@ export class AnomalyDetector {
 
     const hasChanges = this.differ?.hasChanges(responseBody);
     if (hasChanges) {
-      this.paramMiner.sdk.console.log("[!!!] Looks like body is not stable.");
       stable.bodyStable = false;
     }
 
     if (response.status !== this.initialRequestResponse?.response.status) {
-      this.paramMiner.sdk.console.log("[!!!] Looks like status is not stable.");
       stable.statusCodeStable = false;
     }
 
@@ -333,9 +318,6 @@ export class AnomalyDetector {
       Object.keys(response.headers).length !==
       Object.keys(this.initialRequestResponse!.response.headers).length
     ) {
-      this.paramMiner.sdk.console.log(
-        "[!!!] Looks like headers are not stable."
-      );
       stable.headersStable = false;
     } else {
       // Compare each header value
@@ -353,13 +335,6 @@ export class AnomalyDetector {
         ) {
           stable.unstableHeaders.add(headerName);
         }
-      }
-
-      if (stable.unstableHeaders.size > 0) {
-        this.paramMiner.sdk.console.log(
-          "[!!!] Found unstable headers: " +
-            Array.from(stable.unstableHeaders).join(", ")
-        );
       }
     }
 

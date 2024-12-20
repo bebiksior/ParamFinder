@@ -6,7 +6,6 @@ interface SizeConfig {
   sizes: number[];
   defaultSize: number;
   generateParams: (size: number) => Parameter[];
-  getLogMessage: (size: number) => string;
 }
 
 export const sizeConfigs: Record<string, SizeConfig> = {
@@ -18,7 +17,6 @@ export const sizeConfigs: Record<string, SizeConfig> = {
         name: randomString(10),
         value: randomString(10),
       })),
-    getLogMessage: (size) => `${size} headers`,
   },
   query: {
     sizes: [14000, 8000, 4000, 2000, 500],
@@ -29,7 +27,6 @@ export const sizeConfigs: Record<string, SizeConfig> = {
         value: randomString(size),
       },
     ],
-    getLogMessage: (size) => `URL size ${size}`,
   },
   body: {
     sizes: [100000, 50000, 25000, 10000],
@@ -40,7 +37,6 @@ export const sizeConfigs: Record<string, SizeConfig> = {
         value: randomString(size),
       },
     ],
-    getLogMessage: (size) => `body size ${size}`,
   },
 };
 
@@ -53,7 +49,7 @@ export async function guessMaxSize(paramMiner: ParamMiner): Promise<number> {
 
   let lastSuccessfulSize = 0;
   let requestsSent = 0;
-  const { sizes, defaultSize, generateParams, getLogMessage } = config;
+  const { sizes, defaultSize, generateParams } = config;
 
   paramMiner.sdk.console.log(
     `Detecting maximum ${paramMiner.config.attackType} size...`
@@ -62,7 +58,6 @@ export async function guessMaxSize(paramMiner: ParamMiner): Promise<number> {
   for (const size of sizes) {
     try {
       const params = generateParams(size);
-      paramMiner.sdk.console.log(`Testing ${getLogMessage(size)}...`);
 
       const response = await paramMiner.requester.sendRequestWithParams(
         paramMiner.target,
@@ -79,20 +74,10 @@ export async function guessMaxSize(paramMiner: ParamMiner): Promise<number> {
       );
       if (!anomaly) {
         lastSuccessfulSize = size;
-        paramMiner.sdk.console.log(`${getLogMessage(size)} successful`);
         break;
       }
-
-      paramMiner.sdk.console.log(
-        `${getLogMessage(size)} failed with anomaly: ${JSON.stringify(anomaly)}`
-      );
     } catch (error) {
       requestsSent++;
-      paramMiner.sdk.console.log(
-        `${getLogMessage(size)} failed with error: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
       continue;
     }
   }
