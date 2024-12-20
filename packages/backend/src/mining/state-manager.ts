@@ -1,10 +1,14 @@
 import { MiningSessionState } from "shared";
 import { EventEmitter } from "events";
 
+export type MiningPhase = "learning" | "discovery" | "idle";
+export type StateChangeEvent = { oldState: MiningSessionState; newState: MiningSessionState; phase?: MiningPhase };
+
 export class StateManager {
   private state: MiningSessionState;
-  private phase: "learning" | "discovery" | "idle";
-  private eventEmitter: EventEmitter;
+  private phase: MiningPhase;
+  private readonly eventEmitter: EventEmitter;
+  private readonly PAUSE_CHECK_INTERVAL = 100;
 
   constructor(eventEmitter: EventEmitter) {
     this.state = MiningSessionState.Pending;
@@ -12,17 +16,17 @@ export class StateManager {
     this.eventEmitter = eventEmitter;
   }
 
-  public getState(): MiningSessionState {
+  public getState(): Readonly<MiningSessionState> {
     return this.state;
   }
 
-  public getPhase(): "learning" | "discovery" | "idle" {
+  public getPhase(): Readonly<MiningPhase> {
     return this.phase;
   }
 
   private async waitForStateChange(): Promise<void> {
-    while (this.state === MiningSessionState.Paused) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+    while (this.isPaused()) {
+      await new Promise(resolve => setTimeout(resolve, this.PAUSE_CHECK_INTERVAL));
     }
   }
 
@@ -31,7 +35,7 @@ export class StateManager {
       return false;
     }
 
-    if (this.state === MiningSessionState.Paused) {
+    if (this.isPaused()) {
       await this.waitForStateChange();
       return this.shouldContinue();
     }
@@ -39,7 +43,7 @@ export class StateManager {
     return true;
   }
 
-  public updateState(newState: MiningSessionState, phase?: "learning" | "discovery" | "idle"): void {
+  public updateState(newState: MiningSessionState, phase?: MiningPhase): void {
     const oldState = this.state;
     this.state = newState;
 
@@ -47,18 +51,23 @@ export class StateManager {
       this.phase = phase;
     }
 
+    const event: StateChangeEvent = { oldState, newState, phase };
     this.eventEmitter.emit("stateChange", newState);
-    this.eventEmitter.emit("debug", `[state-manager.ts] State changed from ${oldState} to ${newState}${phase ? ` (${phase})` : ''}`);
+    this.eventEmitter.emit("debug", this.formatStateChangeMessage(event));
+  }
+
+  private formatStateChangeMessage({ oldState, newState, phase }: StateChangeEvent): string {
+    return `[state-manager.ts] State changed from ${oldState} to ${newState}${phase ? ` (${phase})` : ''}`;
   }
 
   public pause(): void {
-    if (this.state === MiningSessionState.Running || this.state === MiningSessionState.Learning) {
+    if (this.isRunningOrLearning()) {
       this.updateState(MiningSessionState.Paused);
     }
   }
 
   public resume(): void {
-    if (this.state === MiningSessionState.Paused) {
+    if (this.isPaused()) {
       const newState = this.phase === "learning" ? MiningSessionState.Learning : MiningSessionState.Running;
       this.updateState(newState);
     }
@@ -69,12 +78,22 @@ export class StateManager {
   }
 
   public shouldContinue(): boolean {
-    return this.state !== MiningSessionState.Canceled && this.state !== MiningSessionState.Error;
+    return !this.isCanceledOrError();
   }
 
   public isActive(): boolean {
-    return this.state === MiningSessionState.Running ||
-           this.state === MiningSessionState.Learning ||
-           this.state === MiningSessionState.Paused;
+    return this.isRunningOrLearning() || this.isPaused();
+  }
+
+  private isPaused(): boolean {
+    return this.state === MiningSessionState.Paused;
+  }
+
+  private isRunningOrLearning(): boolean {
+    return this.state === MiningSessionState.Running || this.state === MiningSessionState.Learning;
+  }
+
+  private isCanceledOrError(): boolean {
+    return this.state === MiningSessionState.Canceled || this.state === MiningSessionState.Error;
   }
 }

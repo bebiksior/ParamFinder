@@ -183,7 +183,8 @@ export class AnomalyDetector {
         parameters: params,
       });
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      const delay = this.paramMiner.config.delayBetweenRequests + Math.floor(Math.random() * 300) + 200;
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
 
     if (!await this.paramMiner.stateManager.continueOrWait()) {
