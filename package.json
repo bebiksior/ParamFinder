@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@caido/plugin-manifest": "0.2.0",
+    "esbuild": "0.24.0",
     "jszip": "3.10.1",
     "typescript": "5.7.2",
     "vite": "6.0.2"
