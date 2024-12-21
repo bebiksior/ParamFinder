@@ -2,13 +2,16 @@ import { MiningSessionState } from "shared";
 import { EventEmitter } from "events";
 
 export type MiningPhase = "learning" | "discovery" | "idle";
-export type StateChangeEvent = { oldState: MiningSessionState; newState: MiningSessionState; phase?: MiningPhase };
+export type StateChangeEvent = {
+  oldState: MiningSessionState;
+  newState: MiningSessionState;
+  phase?: MiningPhase;
+};
 
 export class StateManager {
   private state: MiningSessionState;
   private phase: MiningPhase;
   private readonly eventEmitter: EventEmitter;
-  private readonly PAUSE_CHECK_INTERVAL = 100;
 
   constructor(eventEmitter: EventEmitter) {
     this.state = MiningSessionState.Pending;
@@ -26,7 +29,7 @@ export class StateManager {
 
   private async waitForStateChange(): Promise<void> {
     while (this.isPaused()) {
-      await new Promise(resolve => setTimeout(resolve, this.PAUSE_CHECK_INTERVAL));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
 
@@ -56,8 +59,12 @@ export class StateManager {
     this.eventEmitter.emit("debug", this.formatStateChangeMessage(event));
   }
 
-  private formatStateChangeMessage({ oldState, newState, phase }: StateChangeEvent): string {
-    return `[state-manager.ts] State changed from ${oldState} to ${newState}${phase ? ` (${phase})` : ''}`;
+  private formatStateChangeMessage({
+    oldState,
+    newState,
+    phase,
+  }: StateChangeEvent): string {
+    return `[state-manager.ts] State changed from ${oldState} to ${newState}${phase ? ` (${phase})` : ""}`;
   }
 
   public pause(): void {
@@ -68,7 +75,10 @@ export class StateManager {
 
   public resume(): void {
     if (this.isPaused()) {
-      const newState = this.phase === "learning" ? MiningSessionState.Learning : MiningSessionState.Running;
+      const newState =
+        this.phase === "learning"
+          ? MiningSessionState.Learning
+          : MiningSessionState.Running;
       this.updateState(newState);
     }
   }
@@ -90,10 +100,16 @@ export class StateManager {
   }
 
   private isRunningOrLearning(): boolean {
-    return this.state === MiningSessionState.Running || this.state === MiningSessionState.Learning;
+    return (
+      this.state === MiningSessionState.Running ||
+      this.state === MiningSessionState.Learning
+    );
   }
 
   private isCanceledOrError(): boolean {
-    return this.state === MiningSessionState.Canceled || this.state === MiningSessionState.Error;
+    return (
+      this.state === MiningSessionState.Canceled ||
+      this.state === MiningSessionState.Error
+    );
   }
 }

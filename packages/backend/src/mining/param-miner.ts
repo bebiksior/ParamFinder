@@ -7,13 +7,13 @@ import { guessMaxSize, sizeConfigs } from "./features/guess-max-size";
 import { Requester } from "./requester";
 import { EventEmitter } from "events";
 import { ParamDiscovery } from "./discovery";
-import { CaidoBackendSDK } from "../types/types";
+import { BackendSDK } from "../types/types";
 import { generateID } from "../util/helper";
 import { checkForWAF } from "./features/waf-check";
 import { StateManager } from "./state-manager";
 
 export class ParamMiner {
-  public sdk: CaidoBackendSDK;
+  public sdk: BackendSDK;
   public target: Request;
   public config: ParamMinerConfig;
   public requester: Requester;
@@ -25,7 +25,7 @@ export class ParamMiner {
   public initialRequestsSent: number | null;
   public stateManager: StateManager;
 
-  constructor(sdk: CaidoBackendSDK, target: Request, config: ParamMinerConfig) {
+  constructor(sdk: BackendSDK, target: Request, config: ParamMinerConfig) {
     this.sdk = sdk;
     this.id = generateID();
     this.target = target;
@@ -54,7 +54,7 @@ export class ParamMiner {
     this.eventEmitter.emit("logs", "Sending learn requests...");
     try {
       await this.anomalyDetector.learnFactors();
-      if (!await this.stateManager.continueOrWait()) return;
+      if (!(await this.stateManager.continueOrWait())) return;
     } catch (error) {
       if (this.stateManager.getState() !== MiningSessionState.Canceled) {
         this.eventEmitter.emit("error", (error as Error).message);
@@ -67,10 +67,10 @@ export class ParamMiner {
     if (this.config.autoDetectMaxSize) {
       this.eventEmitter.emit(
         "logs",
-        `Auto-detecting max ${this.config.attackType} size...`
+        `Auto-detecting max ${this.config.attackType} size...`,
       );
       this.config.maxSize = await guessMaxSize(this);
-      if (!await this.stateManager.continueOrWait()) return;
+      if (!(await this.stateManager.continueOrWait())) return;
     } else {
       if (this.config.attackType === "query") {
         this.config.maxSize = this.config.maxQuerySize;
@@ -84,14 +84,14 @@ export class ParamMiner {
     if (this.config.maxSize) {
       this.eventEmitter.emit(
         "logs",
-        `Max ${this.config.attackType} size: ${this.config.maxSize}`
+        `Max ${this.config.attackType} size: ${this.config.maxSize}`,
       );
     }
 
     if (this.config.wafDetection) {
       this.eventEmitter.emit("logs", "Checking for WAF...");
       const wafResponse = await checkForWAF(this);
-      if (!await this.stateManager.continueOrWait()) return;
+      if (!(await this.stateManager.continueOrWait())) return;
 
       if (wafResponse) {
         this.eventEmitter.emit("logs", "WAF detected");
@@ -102,11 +102,11 @@ export class ParamMiner {
     }
 
     const words = this.extractWordsFromResponse(
-      this.anomalyDetector.initialRequestResponse?.response.body || ""
+      this.anomalyDetector.initialRequestResponse?.response.body || "",
     );
     this.eventEmitter.emit(
       "logs",
-      `Extracted ${words} words from initial response.`
+      `Extracted ${words} words from initial response.`,
     );
 
     if (await this.stateManager.continueOrWait()) {
@@ -114,7 +114,7 @@ export class ParamMiner {
       this.sdk.api.send(
         "paramfinder:adjust",
         this.id,
-        this.paramDiscovery.calculateTotalRequests()
+        this.paramDiscovery.calculateTotalRequests(),
       );
 
       await this.paramDiscovery.startDiscovery();
@@ -148,7 +148,10 @@ export class ParamMiner {
     return this.stateManager.getState();
   }
 
-  public updateState(state: MiningSessionState, phase?: "learning" | "discovery" | "idle") {
+  public updateState(
+    state: MiningSessionState,
+    phase?: "learning" | "discovery" | "idle",
+  ) {
     this.stateManager.updateState(state, phase);
   }
 
@@ -183,7 +186,7 @@ export class ParamMiner {
   }
 
   onStateChange(
-    callback: (stateChange: ParamMinerEvents["onStateChange"]) => void
+    callback: (stateChange: ParamMinerEvents["onStateChange"]) => void,
   ) {
     this.eventEmitter.on("stateChange", callback);
   }
@@ -193,7 +196,10 @@ export class ParamMiner {
   }
 
   onProgress(
-    callback: (parametersSent: number, requestResponse: RequestResponse) => void
+    callback: (
+      parametersSent: number,
+      requestResponse: RequestResponse,
+    ) => void,
   ) {
     this.eventEmitter.on("responseReceived", callback);
   }

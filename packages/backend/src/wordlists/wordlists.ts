@@ -2,6 +2,7 @@ import { SDK } from "caido:plugin";
 import { Wordlist } from "shared";
 import { Database } from "sqlite";
 import { deleteFile } from "../util/helper";
+import { BackendSDK } from "../types/types";
 
 class WordlistManager {
   private sdk: SDK;
@@ -9,9 +10,10 @@ class WordlistManager {
 
   constructor(sdk: SDK) {
     this.sdk = sdk;
+    this.init();
   }
 
-  async init(): Promise<boolean> {
+  private async init(): Promise<boolean> {
     this.database = await this.sdk.meta.db();
     return await this.setupDatabase();
   }
@@ -20,7 +22,7 @@ class WordlistManager {
     if (!this.database) return false;
 
     const tableExistsStatement = await this.database.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name='wordlists'"
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='wordlists'",
     );
     const tableExists = await tableExistsStatement.get();
 
@@ -43,7 +45,7 @@ class WordlistManager {
 
     const startTime = Date.now();
     const statement = await this.database.prepare(
-      "INSERT OR IGNORE INTO wordlists (path, enabled) VALUES (?, ?)"
+      "INSERT OR IGNORE INTO wordlists (path, enabled) VALUES (?, ?)",
     );
     await statement.run(path, enabled ? 1 : 0);
 
@@ -56,7 +58,7 @@ class WordlistManager {
 
     const startTime = Date.now();
     const statement = await this.database.prepare(
-      "DELETE FROM wordlists WHERE path = ?"
+      "DELETE FROM wordlists WHERE path = ?",
     );
     await statement.run(path);
 
@@ -71,15 +73,20 @@ class WordlistManager {
     if (!this.database) throw new Error("Database not initialized");
 
     const startTime = Date.now();
-    const statement = await this.database.prepare("SELECT path, enabled FROM wordlists");
-    const rows = await statement.all() as Array<{path: string, enabled: number}>;
+    const statement = await this.database.prepare(
+      "SELECT path, enabled FROM wordlists",
+    );
+    const rows = (await statement.all()) as Array<{
+      path: string;
+      enabled: number;
+    }>;
 
     const timeTaken = Date.now() - startTime;
     this.sdk.console.log(`[DATABASE] Fetched wordlist paths in ${timeTaken}ms`);
 
-    return rows.map(row => ({
+    return rows.map((row) => ({
       path: row.path,
-      enabled: Boolean(row.enabled)
+      enabled: Boolean(row.enabled),
     }));
   }
 
@@ -88,7 +95,7 @@ class WordlistManager {
 
     const startTime = Date.now();
     const statement = await this.database.prepare(
-      "UPDATE wordlists SET enabled = ? WHERE path = ?"
+      "UPDATE wordlists SET enabled = ? WHERE path = ?",
     );
     await statement.run(enabled ? 1 : 0, path);
 
@@ -100,7 +107,7 @@ class WordlistManager {
     if (!this.database) throw new Error("Database not initialized");
 
     const wordlists = await this.getWordlists();
-    for (const {path} of wordlists) {
+    for (const { path } of wordlists) {
       await deleteFile(this.sdk, path);
     }
 
@@ -113,4 +120,19 @@ class WordlistManager {
   }
 }
 
-export default WordlistManager;
+let wordlistManager: WordlistManager | null = null;
+
+export function initWordlistManager(sdk: BackendSDK) {
+  if (wordlistManager) {
+    throw new Error("Wordlist manager already initialized");
+  }
+
+  wordlistManager = new WordlistManager(sdk);
+}
+
+export function getWordlistManager(): WordlistManager {
+  if (!wordlistManager) {
+    throw new Error("Wordlist manager not initialized");
+  }
+  return wordlistManager;
+}

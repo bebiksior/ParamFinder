@@ -29,7 +29,7 @@ export class Requester {
   public async sendRequestWithParams(
     request: Request,
     parameters: Parameter[],
-    context?: RequestContext
+    context?: RequestContext,
   ) {
     const attackType = this.paramMiner.config.attackType;
 
@@ -37,10 +37,13 @@ export class Requester {
       ...request,
       id: generateID(),
       context: context ?? "discovery",
-      headers: { ...request.headers }
+      headers: { ...request.headers },
     };
 
-    this.paramMiner.eventEmitter.emit("debug", `[requester.ts] Sending request with ${parameters.length} parameters... (requestCopy has ${Object.keys(requestCopy).length} parameters)`);
+    this.paramMiner.eventEmitter.emit(
+      "debug",
+      `[requester.ts] Sending request with ${parameters.length} parameters... (requestCopy has ${Object.keys(requestCopy).length} parameters)`,
+    );
 
     switch (attackType) {
       case "query":
@@ -48,7 +51,7 @@ export class Requester {
         const queryParams = parameters
           .map(
             (p) =>
-              `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`
+              `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`,
           )
           .join("&");
         requestCopy.query = requestCopy.query
@@ -67,15 +70,25 @@ export class Requester {
         const contentType = request.headers["content-type"]?.[0]?.toLowerCase();
 
         if (!this.bodyType) {
-          const isJSON = this.isJSONBody(originalBody) || contentType?.includes("/json");
-          const isQuery = this.isQueryBody(originalBody) || contentType?.includes("/x-www-form-urlencoded");
+          const isJSON =
+            this.isJSONBody(originalBody) ||
+            contentType?.includes("application/json");
+          const isQuery =
+            this.isQueryBody(originalBody) ||
+            contentType?.includes("application/x-www-form-urlencoded");
 
           if (!isJSON && !isQuery) {
-            throw new Error("Body must be either JSON or URL-encoded query string");
+            throw new Error(
+              "Body must be either JSON or URL-encoded query string",
+            );
           }
 
           this.bodyType = isJSON ? "json" : "query";
-          this.paramMiner.sdk.api.send("paramfinder:log", this.paramMiner.id, `Determined body format: ${this.bodyType}`);
+          this.paramMiner.sdk.api.send(
+            "paramfinder:log",
+            this.paramMiner.id,
+            `Determined body format: ${this.bodyType}`,
+          );
         }
 
         if (this.bodyType === "json") {
@@ -88,10 +101,15 @@ export class Requester {
         } else {
           const existingParams = originalBody ? originalBody + "&" : "";
           const newParams = parameters
-            .map((p) => `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`)
+            .map(
+              (p) =>
+                `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`,
+            )
             .join("&");
           requestCopy.body = existingParams + newParams;
-          requestCopy.headers["content-type"] = ["application/x-www-form-urlencoded"];
+          requestCopy.headers["content-type"] = [
+            "application/x-www-form-urlencoded",
+          ];
         }
         break;
       }

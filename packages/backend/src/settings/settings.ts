@@ -3,7 +3,7 @@ import { Settings } from "shared";
 import * as path from "path";
 import { readFile, writeFile } from "fs/promises";
 
-export class SettingsStore {
+class SettingsStore {
   private static instance: SettingsStore;
 
   private settings: Settings;
@@ -68,4 +68,21 @@ export class SettingsStore {
       await this.saveSettingsToFile();
     }
   }
+}
+
+let settingsStore: SettingsStore | null = null;
+export function initSettingsStore(sdk: SDK) {
+  if (settingsStore) {
+    throw new Error("Settings store already initialized");
+  }
+
+  settingsStore = new SettingsStore(sdk);
+}
+
+export function getSettingsStore(): SettingsStore {
+  if (!settingsStore) {
+    throw new Error("Settings store not initialized");
+  }
+
+  return settingsStore;
 }
