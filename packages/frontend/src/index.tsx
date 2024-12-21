@@ -219,12 +219,13 @@ function setupCommands(sdk: FrontendSDK) {
     mouseY = event.clientY;
   });
 
+  let supportedPages = ["#/http-history", "#/replay", "#/automate"];
   let isQuickMenuOpen = false;
   sdk.commands.register("paramfinder:quick-menu", {
     name: "Param Finder Quick Menu",
     group: "Param Finder",
     run: async (context: CommandContext) => {
-      if (isQuickMenuOpen) {
+      if (isQuickMenuOpen || !supportedPages.includes(window.location.hash)) {
         return;
       }
 
@@ -254,8 +255,7 @@ function setupCommands(sdk: FrontendSDK) {
   });
 
   sdk.shortcuts.register("paramfinder:quick-menu", [
-    "command+shift+e",
-    "ctrl+shift+e",
+    "ctrl+shift+e, command+shift+e",
   ]);
 }
 

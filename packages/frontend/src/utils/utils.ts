@@ -137,10 +137,19 @@ export function getSelectedRequest(sdk: FrontendSDK) {
       const { innerText: historyRaw } = document.querySelector(
         "[data-language='http-request']"
       ) as HTMLElement;
+      let historyUrl: string;
+      const historyUrlElement = document.querySelector(".c-request-header__label");
+      const automateUrlElement = document.querySelector(
+        ".c-automate-session-toolbar__connection-info input"
+      ) as HTMLInputElement;
 
-      const { innerText: historyUrl } = document.querySelector(
-        ".c-request-header__label"
-      ) as HTMLElement;
+      if (historyUrlElement) {
+        historyUrl = (historyUrlElement as HTMLElement).innerText;
+      } else if (automateUrlElement) {
+        historyUrl = automateUrlElement.value;
+      } else {
+        throw new Error("Could not find URL element");
+      }
 
       const { isTLS, port } = getPortAndTLS(historyUrl);
 
