@@ -28,12 +28,10 @@ export function createQuickMenu(options: QuickMenuOptions, callbacks: QuickMenuC
   }
 
   function handleKeyUp(e: KeyboardEvent) {
-    if (
-      e.key === "Meta" ||
-      e.key === "Control" ||
-      e.key === "Shift" ||
-      e.key.toLowerCase() === "e"
-    ) {
+    const isMacShortcut = e.key === "Meta" || e.key === "Control" || e.key === "Shift" || e.key.toLowerCase() === "e";
+    const isWindowsShortcut = e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "e";
+
+    if (isMacShortcut || isWindowsShortcut) {
       if (currentHoveredButton) {
         currentHoveredButton.click();
         closeMenu();

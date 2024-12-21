@@ -149,8 +149,6 @@ function setupCommands(sdk: FrontendSDK) {
       raw: request.raw,
     };
 
-    console.log("_request", _request);
-
     await handleMining(_request, settings, attackType);
   }
 
@@ -255,7 +253,10 @@ function setupCommands(sdk: FrontendSDK) {
     },
   });
 
-  sdk.shortcuts.register("paramfinder:quick-menu", ["command+shift+e", "ctrl+shift+e"]);
+  sdk.shortcuts.register("paramfinder:quick-menu", [
+    "command+shift+e",
+    "ctrl+shift+e",
+  ]);
 }
 
 /**
