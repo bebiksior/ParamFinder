@@ -14,14 +14,14 @@ export default function RequestDetails() {
       const session = state.sessions[activeSessionId];
 
       const findingRequest = session.findings.find(
-        (finding) => finding.requestResponse?.request.id === selectedRequestId
+        (finding) => finding.requestResponse?.request.id === selectedRequestId,
       )?.requestResponse;
       if (findingRequest) return findingRequest;
 
       return session.sentRequests.find(
-        (req) => req.requestResponse?.request.id === selectedRequestId
+        (req) => req.requestResponse?.request.id === selectedRequestId,
       )?.requestResponse;
-    })
+    }),
   );
 
   if (!selectedRequestResponse) {

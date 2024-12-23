@@ -1,21 +1,37 @@
-import { Finding, Parameter, RequestContext } from "shared";
+import { Finding, MiningSessionPhase, RequestContext } from "shared";
 import { MiningSessionState, RequestResponse } from "shared";
 import { FrontendSDK } from "./types";
 import { useSessionsStore } from "./stores/sessionsStore";
 
 export function setupEvents(sdk: FrontendSDK) {
-  const { newSession, updateSessionState, addRequestResponse, addFinding, addLog, updateSessionTotalRequests } =
-    useSessionsStore.getState();
+  const {
+    newSession,
+    updateSessionState,
+    addRequestResponse,
+    addFinding,
+    addLog,
+  } = useSessionsStore.getState();
 
-  sdk.backend.onEvent("paramfinder:new", (miningID: string, totalRequests: number) => {
-    console.log("paramfinder:new", miningID, totalRequests);
-    newSession(miningID, totalRequests);
-    addLog(miningID, `Starting mining session ${miningID}`);
-  });
+  sdk.backend.onEvent(
+    "paramfinder:new",
+    (
+      miningID: string,
+      totalParametersAmount: number,
+      totalLearnRequests: number,
+    ) => {
+      console.log(
+        "paramfinder:new",
+        miningID,
+        totalParametersAmount,
+        totalLearnRequests,
+      );
+      newSession(miningID, totalParametersAmount, totalLearnRequests);
+      addLog(miningID, `Starting mining session ${miningID}`);
+    },
+  );
 
   sdk.backend.onEvent("paramfinder:complete", (miningID: string) => {
     console.log("paramfinder:complete", miningID);
-    updateSessionState(miningID, MiningSessionState.Completed);
     addLog(miningID, `Mining session ${miningID} completed`);
   });
 
@@ -26,11 +42,18 @@ export function setupEvents(sdk: FrontendSDK) {
 
   sdk.backend.onEvent(
     "paramfinder:state",
-    (miningID: string, state: MiningSessionState) => {
-      console.log("paramfinder:state", miningID, state);
-      updateSessionState(miningID, state);
-      addLog(miningID, `Mining session ${miningID} state changed to ${state}`);
-    }
+    (
+      miningID: string,
+      state: MiningSessionState,
+      phase?: MiningSessionPhase,
+    ) => {
+      console.log("paramfinder:state", miningID, state, phase);
+      updateSessionState(miningID, state, phase);
+      addLog(
+        miningID,
+        `Mining session ${miningID} state changed to ${state}${phase ? ` (phase: ${phase})` : ""}.`,
+      );
+    },
   );
 
   sdk.backend.onEvent(
@@ -50,7 +73,7 @@ export function setupEvents(sdk: FrontendSDK) {
       );
 
       addRequestResponse(miningID, parametersSent, context, requestResponse);
-    }
+    },
   );
 
   sdk.backend.onEvent(
@@ -59,23 +82,30 @@ export function setupEvents(sdk: FrontendSDK) {
       console.log("paramfinder:new_finding", miningID, finding);
       addFinding(miningID, finding);
       addLog(miningID, `New parameter discovered: ${finding.parameter.name}`);
-    }
+    },
   );
 
   sdk.backend.onEvent(
     "paramfinder:error",
     (miningID: string, error: string) => {
       console.log("paramfinder:error", miningID, error);
-      updateSessionState(miningID, MiningSessionState.Error);
-      addLog(miningID, `Mining session ${miningID} error: ${JSON.stringify(error)}`);
-    }
+      updateSessionState(
+        miningID,
+        MiningSessionState.Error,
+        MiningSessionPhase.Idle,
+      );
+      addLog(
+        miningID,
+        `Mining session ${miningID} error: ${JSON.stringify(error)}`,
+      );
+    },
   );
 
-  sdk.backend.onEvent(
-    "paramfinder:adjust",
-    (miningID: string, totalRequests: number) => {
-      console.log("paramfinder:adjust", miningID, totalRequests);
-      updateSessionTotalRequests(miningID, totalRequests);
-    }
-  );
+  // sdk.backend.onEvent(
+  //   "paramfinder:adjust",
+  //   (miningID: string, totalRequests: number) => {
+  //     console.log("paramfinder:adjust", miningID, totalRequests);
+  //     updateSessionTotalRequests(miningID, totalRequests);
+  //   },
+  // );
 }

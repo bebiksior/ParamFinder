@@ -13,7 +13,6 @@ export async function startMining(
 ): Promise<Result<void>> {
   const wordlistManager = getWordlistManager();
   const settingsStore = getSettingsStore();
-  let sessionID: string | null = null;
 
   try {
     const wordlists = await wordlistManager?.getWordlists();
@@ -27,11 +26,12 @@ export async function startMining(
     }
 
     if (wordlists.filter((wordlist) => wordlist.enabled).length === 0) {
-      return error("No wordlists found. Please upload a wordlist first.");
+      return error(
+        "No enabled wordlists found. Please upload a wordlist first.",
+      );
     }
 
     const paramMiner = new ParamMiner(sdk, target, config);
-
     await Promise.all(
       wordlists.map(async (wordlist) => {
         if (wordlist.enabled) {
@@ -41,62 +41,50 @@ export async function startMining(
       }),
     );
 
-    sessionID = paramMiner.getID();
-
+    const sessionID = paramMiner.getID();
     sdk.api.send(
       "paramfinder:new",
       sessionID,
-      paramMiner.initialRequestAmount(),
+      paramMiner.totalParametersAmount(),
+      paramMiner.config.learnRequestsCount,
     );
 
     paramMiner.onError((err) => {
-      if (sessionID) {
-        sdk.api.send("paramfinder:error", sessionID, err);
-        runningSessions.delete(sessionID);
-      }
+      sdk.api.send("paramfinder:error", sessionID, err);
+      runningSessions.delete(sessionID);
     });
 
     paramMiner.onFinding((finding) => {
-      if (sessionID) {
-        sdk.api.send("paramfinder:new_finding", sessionID, finding);
-      }
+      sdk.api.send("paramfinder:new_finding", sessionID, finding);
     });
 
     paramMiner.onComplete(() => {
-      if (sessionID) {
-        sdk.api.send("paramfinder:complete", sessionID);
-        runningSessions.delete(sessionID);
-      }
+      sdk.api.send("paramfinder:complete", sessionID);
+      runningSessions.delete(sessionID);
     });
 
-    paramMiner.onStateChange((state) => {
-      if (sessionID) {
-        sdk.api.send("paramfinder:state", sessionID, state);
-      }
+    paramMiner.onStateChange((state, phase) => {
+      sdk.api.send("paramfinder:state", sessionID, state, phase);
     });
 
     paramMiner.onProgress((parametersSent, requestResponse) => {
-      if (sessionID) {
-        const isPerformanceMode = paramMiner.config.performanceMode;
+      const isPerformanceMode = paramMiner.config.performanceMode;
 
-        sdk.api.send(
-          "paramfinder:progress",
-          sessionID,
-          parametersSent,
-          requestResponse?.request.context,
-          isPerformanceMode ? undefined : requestResponse,
-        );
-      }
+      sdk.api.send(
+        "paramfinder:progress",
+        sessionID,
+        parametersSent,
+        requestResponse?.request.context,
+        isPerformanceMode ? undefined : requestResponse,
+      );
     });
 
     paramMiner.onLogs((logs) => {
-      if (sessionID) {
-        sdk.api.send("paramfinder:log", sessionID, logs);
-      }
+      sdk.api.send("paramfinder:log", sessionID, logs);
     });
 
     paramMiner.onDebug((debug) => {
-      if (sessionID && settings.debug) {
+      if (settings.debug) {
         sdk.api.send("paramfinder:log", sessionID, `[DEBUG] ${debug}`);
       }
     });
@@ -108,9 +96,6 @@ export async function startMining(
 
     return ok(void 0);
   } catch (err) {
-    if (sessionID) {
-      sdk.api.send("paramfinder:error", sessionID, err);
-    }
     sdk.console.error(err);
     return error(err instanceof Error ? err.message : String(err));
   }

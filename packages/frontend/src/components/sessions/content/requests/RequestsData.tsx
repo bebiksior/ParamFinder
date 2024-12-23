@@ -1,9 +1,10 @@
 import { StyledBox, StyledSplitter } from "caido-material-ui";
 import { Tabs, Tab } from "@mui/material";
-import RequestList from "./RequestList";
 import RequestDetails from "./RequestDetails";
 import { useUIStore } from "@/stores/uiStore";
 import { VIEW_CATEGORIES } from "@/stores/uiStore";
+import FindingsList from "./tables/FindingsList";
+import RequestList from "./tables/RequestList";
 
 export default function RequestsData() {
   const { activeCategory, setActiveCategory } = useUIStore();
@@ -19,7 +20,8 @@ export default function RequestsData() {
       </Tabs>
 
       <StyledSplitter vertical>
-        <RequestList />
+        {activeCategory === VIEW_CATEGORIES.FINDINGS && <FindingsList />}
+        {activeCategory === VIEW_CATEGORIES.REQUESTS && <RequestList />}
         <RequestDetails />
       </StyledSplitter>
     </StyledBox>

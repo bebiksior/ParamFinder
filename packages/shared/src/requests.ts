@@ -14,7 +14,11 @@ export interface Request {
   raw: string;
 }
 
-export type RequestContext = "discovery" | "narrower" | "learning";
+export type RequestContext =
+  | "discovery"
+  | "narrower"
+  | "learning"
+  | "autopilot";
 
 export interface Response {
   requestID: string;

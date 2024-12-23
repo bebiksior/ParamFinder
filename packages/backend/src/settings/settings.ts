@@ -19,6 +19,8 @@ class SettingsStore {
       learnRequestsCount: 8,
       wafDetection: true,
       debug: false,
+      autopilotEnabled: true,
+      updateContentLength: true,
     };
     this.sdk = sdk;
 

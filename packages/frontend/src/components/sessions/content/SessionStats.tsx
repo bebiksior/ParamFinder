@@ -8,6 +8,7 @@ import {
 } from "@mui/material";
 import { useSessionsStore } from "@/stores/sessionsStore";
 import { useShallow } from "zustand/shallow";
+import { MiningSessionPhase } from "shared";
 
 interface StatCardProps {
   title: string;
@@ -33,21 +34,22 @@ export function SessionStats() {
   const activeSessionId = useSessionsStore((state) => state.activeSessionId);
   const activeSessionData = useSessionsStore(
     useShallow((state) => {
-      if (!activeSessionId || !state.sessions[activeSessionId]) return null;
+      const activeSession = state.sessions[activeSessionId];
+      if (!activeSessionId || !activeSession) return null;
       return {
-        sentRequests: state.sessions[activeSessionId].sentRequests,
-        findings: state.sessions[activeSessionId].findings,
-        totalRequests: state.sessions[activeSessionId].totalRequests,
+        sentRequests: activeSession.sentRequests,
+        findings: activeSession.findings,
+        phase: activeSession.phase,
+        totalParametersAmount: activeSession.totalParametersAmount,
+        totalLearnRequests: activeSession.totalLearnRequests,
       };
-    })
+    }),
   );
 
   if (!activeSessionData) return null;
 
   const discoveryRequests = activeSessionData.sentRequests.filter(
-    (request) =>
-      request.context === "discovery" ||
-      request.context === "learning"
+    (request) => request.context === "discovery",
   );
 
   const parametersTested = discoveryRequests.reduce((acc, request) => {
@@ -55,8 +57,17 @@ export function SessionStats() {
   }, 0);
 
   const totalRequestsSent = activeSessionData.sentRequests.length;
+  const learningRequestsAmount = activeSessionData.sentRequests.filter(
+    (request) => request.context === "learning",
+  ).length;
+
   const progress =
-    (discoveryRequests.length / activeSessionData.totalRequests) * 100;
+    activeSessionData.phase === MiningSessionPhase.Learning
+      ? Math.min(
+          (learningRequestsAmount / activeSessionData.totalLearnRequests) * 100,
+          100,
+        )
+      : (parametersTested / activeSessionData.totalParametersAmount) * 100;
 
   return (
     <Stack spacing={2} sx={{ p: 2 }}>

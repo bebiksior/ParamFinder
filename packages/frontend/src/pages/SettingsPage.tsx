@@ -15,6 +15,7 @@ import {
 import { StyledBox } from "caido-material-ui";
 import { useState, useEffect, useCallback } from "react";
 import { getSDK } from "@/stores/sdkStore";
+import { Settings } from "shared";
 
 function formatTimeout(milliseconds: number): string {
   if (milliseconds < 1000) return `${milliseconds} milliseconds`;
@@ -25,16 +26,16 @@ function formatTimeout(milliseconds: number): string {
 
   const parts = [];
   if (minutes > 0) {
-    parts.push(`${minutes} minute${minutes > 1 ? 's' : ''}`);
+    parts.push(`${minutes} minute${minutes > 1 ? "s" : ""}`);
   }
   if (seconds > 0) {
-    parts.push(`${seconds} second${seconds > 1 ? 's' : ''}`);
+    parts.push(`${seconds} second${seconds > 1 ? "s" : ""}`);
   }
   if (remainingMilliseconds > 0) {
     parts.push(`${remainingMilliseconds} milliseconds`);
   }
 
-  return parts.join(' and ');
+  return parts.join(" and ");
 }
 
 export default function SettingsPage() {
@@ -53,7 +54,7 @@ export default function SettingsPage() {
       if (!localSettings) return;
       setLocalSettings((prev) => ({ ...prev!, [field]: value }));
     },
-    [localSettings]
+    [localSettings],
   );
 
   const debouncedSave = useCallback(
@@ -83,7 +84,7 @@ export default function SettingsPage() {
 
       updateSettings(newSettings);
     },
-    [updateSettings, sdk.window]
+    [updateSettings, sdk.window],
   );
 
   useEffect(() => {
@@ -147,7 +148,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 handleSettingsChange(
                   "learnRequestsCount",
-                  Number(e.target.value)
+                  Number(e.target.value),
                 )
               }
               helperText="Minimum value is 3. Recommended value is 8 or more."
@@ -208,7 +209,7 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     handleSettingsChange(
                       "maxHeaderSize",
-                      Number(e.target.value)
+                      Number(e.target.value),
                     )
                   }
                   fullWidth
@@ -232,6 +233,14 @@ export default function SettingsPage() {
                 {
                   field: "wafDetection" as const,
                   label: "WAF Detection",
+                },
+                {
+                  field: "autopilotEnabled" as const,
+                  label: "Autopilot Feature",
+                },
+                {
+                  field: "updateContentLength" as const,
+                  label: "Update Content-Length",
                 },
                 {
                   field: "debug" as const,

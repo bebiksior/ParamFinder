@@ -1,9 +1,9 @@
 import { readFile } from "fs/promises";
-import { ParamMinerConfig, ParamMinerEvents } from "shared";
+import { MiningSessionPhase, ParamMinerConfig, ParamMinerEvents } from "shared";
 import { Request, RequestResponse } from "shared";
 import { Finding, MiningSessionState } from "shared";
 import { AnomalyDetector } from "./anomaly";
-import { guessMaxSize, sizeConfigs } from "./features/guess-max-size";
+import { guessMaxSize } from "./features/guess-max-size";
 import { Requester } from "./requester";
 import { EventEmitter } from "events";
 import { ParamDiscovery } from "./discovery";
@@ -24,6 +24,8 @@ export class ParamMiner {
   public wordlist: Set<string>;
   public initialRequestsSent: number | null;
   public stateManager: StateManager;
+  public maxSize: number;
+  public metadata: Map<string, boolean>;
 
   constructor(sdk: BackendSDK, target: Request, config: ParamMinerConfig) {
     this.sdk = sdk;
@@ -37,6 +39,7 @@ export class ParamMiner {
     this.paramDiscovery = new ParamDiscovery(this);
     this.wordlist = new Set<string>();
     this.initialRequestsSent = null;
+    this.metadata = new Map<string, boolean>();
   }
 
   public async addWordlist(path: string) {
@@ -48,10 +51,13 @@ export class ParamMiner {
   }
 
   public async start(): Promise<void> {
-    this.stateManager.updateState(MiningSessionState.Learning, "learning");
+    this.stateManager.updateState(
+      MiningSessionState.Learning,
+      MiningSessionPhase.Learning,
+    );
     this.validateConfig();
 
-    this.eventEmitter.emit("logs", "Sending learn requests...");
+    this.log("Sending learn requests...");
     try {
       await this.anomalyDetector.learnFactors();
       if (!(await this.stateManager.continueOrWait())) return;
@@ -62,42 +68,42 @@ export class ParamMiner {
       }
       return;
     }
-    this.eventEmitter.emit("logs", "Learn requests sent.");
+    this.log("Learn requests sent.");
 
     if (this.config.autoDetectMaxSize) {
       this.eventEmitter.emit(
         "logs",
         `Auto-detecting max ${this.config.attackType} size...`,
       );
-      this.config.maxSize = await guessMaxSize(this);
+      this.maxSize = await guessMaxSize(this);
       if (!(await this.stateManager.continueOrWait())) return;
     } else {
       if (this.config.attackType === "query") {
-        this.config.maxSize = this.config.maxQuerySize;
+        this.maxSize = this.config.maxQuerySize;
       } else if (this.config.attackType === "headers") {
-        this.config.maxSize = this.config.maxHeaderSize;
+        this.maxSize = this.config.maxHeaderSize;
       } else if (this.config.attackType === "body") {
-        this.config.maxSize = this.config.maxBodySize;
+        this.maxSize = this.config.maxBodySize;
       }
     }
 
-    if (this.config.maxSize) {
+    if (this.maxSize) {
       this.eventEmitter.emit(
         "logs",
-        `Max ${this.config.attackType} size: ${this.config.maxSize}`,
+        `Max ${this.config.attackType} size: ${this.maxSize}`,
       );
     }
 
     if (this.config.wafDetection) {
-      this.eventEmitter.emit("logs", "Checking for WAF...");
+      this.log("Checking for WAF...");
       const wafResponse = await checkForWAF(this);
       if (!(await this.stateManager.continueOrWait())) return;
 
       if (wafResponse) {
-        this.eventEmitter.emit("logs", "WAF detected");
+        this.log("WAF detected");
         this.anomalyDetector.setWafResponse(wafResponse);
       } else {
-        this.eventEmitter.emit("logs", "No WAF detected");
+        this.log("No WAF detected");
       }
     }
 
@@ -110,13 +116,10 @@ export class ParamMiner {
     );
 
     if (await this.stateManager.continueOrWait()) {
-      this.stateManager.updateState(MiningSessionState.Running, "discovery");
-      this.sdk.api.send(
-        "paramfinder:adjust",
-        this.id,
-        this.paramDiscovery.calculateTotalRequests(),
+      this.stateManager.updateState(
+        MiningSessionState.Running,
+        MiningSessionPhase.Discovery,
       );
-
       await this.paramDiscovery.startDiscovery();
     }
   }
@@ -135,11 +138,24 @@ export class ParamMiner {
       throw new Error("Learn requests count must be at least 3");
     }
 
-    if (this.config.maxSize && this.config.maxSize < 0) {
-      throw new Error("Max Request size must be greater than 0");
+    if (this.config.maxBodySize && this.config.maxBodySize < 0) {
+      throw new Error("Max Body Size size must be greater than 0");
     }
 
-    if (this.config.maxSize && this.config.autoDetectMaxSize) {
+    if (this.config.maxQuerySize && this.config.maxQuerySize < 0) {
+      throw new Error("Max Query Size size must be greater than 0");
+    }
+
+    if (this.config.maxHeaderSize && this.config.maxHeaderSize < 0) {
+      throw new Error("Max Headers Size size must be greater than 0");
+    }
+
+    if (
+      (this.config.maxBodySize ||
+        this.config.maxQuerySize ||
+        this.config.maxHeaderSize) &&
+      this.config.autoDetectMaxSize
+    ) {
       throw new Error("Cannot set both maxSize and autoDetectMaxSize");
     }
   }
@@ -148,29 +164,19 @@ export class ParamMiner {
     return this.stateManager.getState();
   }
 
-  public updateState(
-    state: MiningSessionState,
-    phase?: "learning" | "discovery" | "idle",
-  ) {
+  public updateState(state: MiningSessionState, phase?: MiningSessionPhase) {
     this.stateManager.updateState(state, phase);
+
+    if (
+      state === MiningSessionState.Canceled ||
+      state === MiningSessionState.Timeout
+    ) {
+      this.eventEmitter.emit("complete");
+    }
   }
 
-  public initialRequestAmount(): number {
-    if (this.initialRequestsSent) {
-      return this.initialRequestsSent;
-    }
-
-    let learnRequestsCount = this.config.learnRequestsCount;
-    if (this.config.wafDetection) {
-      learnRequestsCount += 3;
-    }
-
-    if (this.config.autoDetectMaxSize) {
-      learnRequestsCount += sizeConfigs[this.config.attackType].sizes.length;
-    }
-
-    this.initialRequestsSent = learnRequestsCount;
-    return this.initialRequestsSent;
+  public totalParametersAmount() {
+    return this.wordlist.size;
   }
 
   onLogs(callback: (logs: ParamMinerEvents["onLogs"]) => void) {
@@ -186,7 +192,7 @@ export class ParamMiner {
   }
 
   onStateChange(
-    callback: (stateChange: ParamMinerEvents["onStateChange"]) => void,
+    callback: (state: MiningSessionState, phase?: MiningSessionPhase) => void,
   ) {
     this.eventEmitter.on("stateChange", callback);
   }
@@ -210,5 +216,9 @@ export class ParamMiner {
 
   public getID() {
     return this.id;
+  }
+
+  public log(message: string) {
+    this.eventEmitter.emit("logs", message);
   }
 }

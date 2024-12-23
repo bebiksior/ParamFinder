@@ -10,4 +10,6 @@ export type Settings = {
   learnRequestsCount: number;
   wafDetection: boolean;
   debug: boolean;
+  autopilotEnabled: boolean;
+  updateContentLength: boolean;
 };

@@ -1,15 +1,14 @@
 import { RequestResponse } from "./requests";
-import { Finding, MiningSessionState } from "./sessions";
+import { Finding, MiningSessionPhase, MiningSessionState } from "./sessions";
 
 export interface ParamMinerEvents {
   onFinding: (finding: Finding) => void;
   onResponseReceived: (
     parametersSent: number,
-    requestResponse: RequestResponse
+    requestResponse: RequestResponse,
   ) => void;
   onComplete: () => void;
   onError: (error: MiningError) => void;
-  onStateChange: (state: MiningSessionState) => void;
   onLogs: (logs: string) => void;
   onDebug: (debug: string) => void;
 }
@@ -24,10 +23,11 @@ export type ParamMinerConfig = {
   attackType: AttackType;
   learnRequestsCount: number;
   autoDetectMaxSize: boolean;
-  maxSize?: number;
   maxQuerySize?: number;
   maxHeaderSize?: number;
   maxBodySize?: number;
+  updateContentLength: boolean;
+  autopilotEnabled: boolean;
   timeout: number;
   delayBetweenRequests: number;
   concurrency: number;

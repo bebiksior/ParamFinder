@@ -12,7 +12,7 @@ import {
 import { Caido } from "@caido/sdk-frontend";
 import { API, BackendEvents } from "backend";
 import { CommandContext } from "@caido/sdk-frontend/src/types";
-import { AttackType, Request } from "shared";
+import { AttackType, Request, Settings } from "shared";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createQuickMenu } from "./quickmenu/quickmenu";
 
@@ -41,7 +41,7 @@ function setupUI(sdk: FrontendSDK) {
   root.render(
     <QueryClientProvider client={queryClient}>
       <App />
-    </QueryClientProvider>
+    </QueryClientProvider>,
   );
 
   return rootElement;
@@ -73,8 +73,8 @@ function setupCommands(sdk: FrontendSDK) {
 
   async function handleMining(
     request: Request,
-    settings: any,
-    attackType: AttackType
+    settings: Settings,
+    attackType: AttackType,
   ) {
     const result = await handleBackendCall(
       sdk.backend.startMining(request, {
@@ -90,8 +90,10 @@ function setupCommands(sdk: FrontendSDK) {
         maxBodySize: settings.maxBodySize,
         wafDetection: settings.wafDetection,
         debug: settings.debug,
+        updateContentLength: settings.updateContentLength,
+        autopilotEnabled: settings.autopilotEnabled,
       }),
-      sdk
+      sdk,
     );
 
     sdk.window.showToast("Started ParamFinder session", {
@@ -107,12 +109,12 @@ function setupCommands(sdk: FrontendSDK) {
 
   async function handleRequestRowContext(
     requests: any[],
-    attackType: AttackType
+    attackType: AttackType,
   ) {
     for (const req of requests) {
       const request = await handleBackendCall(
         sdk.backend.getRequest(req.id),
-        sdk
+        sdk,
       );
       const settings = await handleBackendCall(sdk.backend.getSettings(), sdk);
       await handleMining(request, settings, attackType);
@@ -128,7 +130,7 @@ function setupCommands(sdk: FrontendSDK) {
       path: string;
       query: string;
     },
-    attackType: AttackType
+    attackType: AttackType,
   ) {
     const settings = await handleBackendCall(sdk.backend.getSettings(), sdk);
     const parsedRequest = parseRequest(request.raw);
@@ -154,7 +156,7 @@ function setupCommands(sdk: FrontendSDK) {
 
   async function handleCommandRun(
     context: CommandContext,
-    attackType: AttackType
+    attackType: AttackType,
   ) {
     if (context.type === "RequestRowContext") {
       const requests = context.requests.slice(0, 25);
@@ -178,7 +180,7 @@ function setupCommands(sdk: FrontendSDK) {
             path: parsedRequest.path,
             query: parsedRequest.query,
           },
-          attackType
+          attackType,
         );
       }
     }
@@ -246,7 +248,7 @@ function setupCommands(sdk: FrontendSDK) {
         {
           onSelect,
           onClose,
-        }
+        },
       );
 
       quickMenu.open();
@@ -272,7 +274,7 @@ function setupNavigation(sdk: FrontendSDK, rootElement: HTMLDivElement) {
     "/paramfinder",
     {
       icon: "fas fa-search",
-    }
+    },
   );
 
   setCount = setSidebarCount;

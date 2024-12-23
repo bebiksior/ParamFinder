@@ -12,9 +12,16 @@ export enum MiningSessionState {
   Timeout = "timeout",
 }
 
+export enum MiningSessionPhase {
+  Learning = "learning",
+  Discovery = "discovery",
+  Idle = "idle",
+}
+
 export interface MiningSession {
   id: string;
   state: MiningSessionState;
+  phase: MiningSessionPhase;
   sentRequests: {
     parametersSent: number;
     context: RequestContext;
@@ -22,7 +29,8 @@ export interface MiningSession {
   }[];
   findings: Finding[];
   logs: string[];
-  totalRequests: number;
+  totalParametersAmount: number;
+  totalLearnRequests: number;
 }
 
 export type Finding = {

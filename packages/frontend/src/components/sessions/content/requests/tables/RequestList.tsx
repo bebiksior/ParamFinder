@@ -12,15 +12,15 @@ import {
 import { useCallback, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useSessionsStore } from "@/stores/sessionsStore";
-import { VIEW_CATEGORIES } from "@/stores/uiStore";
 import { useShallow } from "zustand/shallow";
 
 type SortField = "id" | "status" | "length" | "time";
 type SortDirection = "asc" | "desc";
 
 export default function RequestList() {
-  const { activeCategory, selectedRequestId, setSelectedRequest } =
-    useUIStore();
+  const selectedRequestId = useUIStore((state) => state.selectedRequestId);
+  const setSelectedRequest = useUIStore((state) => state.setSelectedRequest);
+
   const activeSessionId = useSessionsStore((state) => state.activeSessionId);
   const [sortField, setSortField] = useState<SortField>("id");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -28,21 +28,17 @@ export default function RequestList() {
   const requestResponses = useSessionsStore(
     useShallow((state) => {
       if (!activeSessionId || !state.sessions[activeSessionId]) return [];
-      const session = state.sessions[activeSessionId];
-      if (activeCategory === VIEW_CATEGORIES.FINDINGS) {
-        return session.findings.map((finding) => finding.requestResponse);
-      }
-      return session.sentRequests
-        .filter((req) => req.requestResponse)
-        .map((req) => req.requestResponse!);
-    })
+      return state.sessions[activeSessionId].sentRequests.map(
+        (sentReq) => sentReq.requestResponse,
+      );
+    }),
   );
 
   const handleClick = useCallback(
     (id: string) => {
       setSelectedRequest(id);
     },
-    [setSelectedRequest]
+    [setSelectedRequest],
   );
 
   const handleSort = useCallback(
@@ -54,7 +50,7 @@ export default function RequestList() {
         setSortDirection("asc");
       }
     },
-    [sortField, sortDirection]
+    [sortField, sortDirection],
   );
 
   const sortedRequests = [...requestResponses].sort((a, b) => {

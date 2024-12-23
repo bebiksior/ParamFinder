@@ -5,32 +5,44 @@ import {
   Finding,
   RequestResponse,
   RequestContext,
+  MiningSessionPhase,
 } from "shared";
 import { FrontendSDK } from "@/types";
 
 interface SessionsState {
   sessions: Record<string, MiningSession>;
   activeSessionId: string | null;
-  newSession: (id: string, totalRequests: number) => string;
+  newSession: (
+    id: string,
+    totalParametersAmount: number,
+    totalLearnRequests: number,
+  ) => string;
   addFinding: (id: string, finding: Finding) => void;
   addRequestResponse: (
     id: string,
     parametersSent: number,
     context: RequestContext,
-    requestResponse?: RequestResponse
+    requestResponse?: RequestResponse,
   ) => void;
   setActiveSession: (id: string | null) => void;
   deleteSession: (id: string, sdk: FrontendSDK) => void;
-  updateSessionState: (id: string, sessionState: MiningSessionState) => void;
+  updateSessionState: (
+    id: string,
+    sessionState: MiningSessionState,
+    phase: MiningSessionPhase,
+  ) => void;
   addLog: (id: string, log: string) => void;
-  updateSessionTotalRequests: (id: string, totalRequests: number) => void;
 }
 
 export const useSessionsStore = create<SessionsState>((set, get) => ({
   sessions: {},
   activeSessionId: null,
 
-  newSession: (id: string, totalRequests: number) => {
+  newSession: (
+    id: string,
+    totalParametersAmount: number,
+    totalLearnRequests: number,
+  ) => {
     set((state) => ({
       sessions: {
         ...state.sessions,
@@ -39,7 +51,9 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
           findings: [],
           sentRequests: [],
           state: MiningSessionState.Pending,
-          totalRequests,
+          phase: MiningSessionPhase.Idle,
+          totalParametersAmount,
+          totalLearnRequests,
           logs: [],
         },
       },
@@ -61,16 +75,6 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
     });
   },
 
-  updateSessionTotalRequests: (id: string, totalRequests: number) => {
-    set((state) => {
-      const session = state.sessions[id];
-      if (!session) return {};
-      return {
-        sessions: { ...state.sessions, [id]: { ...session, totalRequests } },
-      };
-    });
-  },
-
   addFinding: (id: string, finding: Finding) => {
     set((state) => {
       const session = state.sessions[id];
@@ -87,14 +91,22 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
     });
   },
 
-  updateSessionState: (id: string, sessionState: MiningSessionState) => {
+  updateSessionState: (
+    id: string,
+    sessionState: MiningSessionState,
+    sessionPhase?: MiningSessionPhase,
+  ) => {
     set((state) => {
       const session = state.sessions[id];
       if (!session) return {};
       return {
         sessions: {
           ...state.sessions,
-          [id]: { ...session, state: sessionState },
+          [id]: {
+            ...session,
+            state: sessionState,
+            phase: sessionPhase ?? session.phase,
+          },
         },
       };
     });
@@ -104,7 +116,7 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
     id: string,
     parametersSent: number,
     context: RequestContext,
-    requestResponse?: RequestResponse
+    requestResponse?: RequestResponse,
   ) => {
     set((state) => {
       const session = state.sessions[id];

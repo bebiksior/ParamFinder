@@ -1,21 +1,20 @@
-import { MiningSessionState } from "shared";
+import { MiningSessionPhase, MiningSessionState } from "shared";
 import { EventEmitter } from "events";
 
-export type MiningPhase = "learning" | "discovery" | "idle";
 export type StateChangeEvent = {
   oldState: MiningSessionState;
   newState: MiningSessionState;
-  phase?: MiningPhase;
+  phase?: MiningSessionPhase;
 };
 
 export class StateManager {
   private state: MiningSessionState;
-  private phase: MiningPhase;
+  private phase: MiningSessionPhase;
   private readonly eventEmitter: EventEmitter;
 
   constructor(eventEmitter: EventEmitter) {
     this.state = MiningSessionState.Pending;
-    this.phase = "idle";
+    this.phase = MiningSessionPhase.Idle;
     this.eventEmitter = eventEmitter;
   }
 
@@ -23,7 +22,7 @@ export class StateManager {
     return this.state;
   }
 
-  public getPhase(): Readonly<MiningPhase> {
+  public getPhase(): Readonly<MiningSessionPhase> {
     return this.phase;
   }
 
@@ -46,7 +45,10 @@ export class StateManager {
     return true;
   }
 
-  public updateState(newState: MiningSessionState, phase?: MiningPhase): void {
+  public updateState(
+    newState: MiningSessionState,
+    phase?: MiningSessionPhase,
+  ): void {
     const oldState = this.state;
     this.state = newState;
 
@@ -55,7 +57,7 @@ export class StateManager {
     }
 
     const event: StateChangeEvent = { oldState, newState, phase };
-    this.eventEmitter.emit("stateChange", newState);
+    this.eventEmitter.emit("stateChange", newState, phase);
     this.eventEmitter.emit("debug", this.formatStateChangeMessage(event));
   }
 
@@ -76,7 +78,7 @@ export class StateManager {
   public resume(): void {
     if (this.isPaused()) {
       const newState =
-        this.phase === "learning"
+        this.phase === MiningSessionPhase.Learning
           ? MiningSessionState.Learning
           : MiningSessionState.Running;
       this.updateState(newState);

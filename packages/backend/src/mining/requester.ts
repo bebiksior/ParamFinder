@@ -2,6 +2,7 @@ import { sendRequest } from "../requests/requests";
 import { Request, Parameter, RequestContext } from "shared";
 import { ParamMiner } from "./param-miner";
 import { generateID } from "../util/helper";
+import { autopilotCheckResponse } from "./features/autopilot";
 
 export class Requester {
   private paramMiner: ParamMiner;
@@ -115,7 +116,29 @@ export class Requester {
       }
     }
 
+    // Update Content-Length if needed
+    if (this.paramMiner.config.updateContentLength) {
+      const contentLength = requestCopy.body.length;
+      if (contentLength == 0) {
+        delete requestCopy.headers["Content-Length"];
+      } else {
+        requestCopy.headers["Content-Length"] = [contentLength.toString()];
+      }
+    }
+
     const requestResponse = await sendRequest(this.paramMiner.sdk, requestCopy);
+
+    // Autopilot feature
+    if (this.paramMiner.config.autopilotEnabled) {
+      const hasTakenAction = autopilotCheckResponse(
+        this.paramMiner,
+        requestResponse,
+      );
+      if (hasTakenAction) {
+        this.paramMiner.sdk.console.log("Autopilot has taken aciton.");
+      }
+    }
+
     return requestResponse;
   }
 }
