@@ -129,7 +129,7 @@ export class Requester {
     const requestResponse = await sendRequest(this.paramMiner.sdk, requestCopy);
 
     // Autopilot feature
-    if (this.paramMiner.config.autopilotEnabled) {
+    if (this.paramMiner.config.autopilotEnabled && context == "discovery") {
       const hasTakenAction = autopilotCheckResponse(
         this.paramMiner,
         requestResponse,
