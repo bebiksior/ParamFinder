@@ -72,6 +72,13 @@ export type BackendEvents = DefineEvents<{
    * @param log - Log message content
    */
   "paramfinder:log": (miningID: string, log: string) => void;
+
+  /**
+   * Notifies client about a change in totalParametersAmount
+   * @param miningID - Session ID
+   * @param newAmount - new totalParametersAmount value
+   */
+  "paramfinder:adjust": (miningID: string, newAmount: number) => void;
 }>;
 
 export type BackendSDK = SDK<never, BackendEvents>;

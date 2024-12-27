@@ -32,6 +32,7 @@ interface SessionsState {
     phase: MiningSessionPhase,
   ) => void;
   addLog: (id: string, log: string) => void;
+  updateTotalParametersAmount: (miningID: string, newAmount: number) => void;
 }
 
 export const useSessionsStore = create<SessionsState>((set, get) => ({
@@ -106,6 +107,22 @@ export const useSessionsStore = create<SessionsState>((set, get) => ({
             ...session,
             state: sessionState,
             phase: sessionPhase ?? session.phase,
+          },
+        },
+      };
+    });
+  },
+
+  updateTotalParametersAmount: (miningID: string, newAmount: number) => {
+    set((state) => {
+      const session = state.sessions[miningID];
+      if (!session) return {};
+      return {
+        sessions: {
+          ...state.sessions,
+          [miningID]: {
+            ...session,
+            totalParametersAmount: newAmount,
           },
         },
       };

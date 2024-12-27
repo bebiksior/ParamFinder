@@ -107,13 +107,16 @@ export class ParamMiner {
       }
     }
 
-    const words = this.extractWordsFromResponse(
+    const wordsAmount = this.extractWordsFromResponse(
       this.anomalyDetector.initialRequestResponse?.response.body || "",
     );
     this.eventEmitter.emit(
       "logs",
-      `Extracted ${words} words from initial response.`,
+      `Extracted ${wordsAmount} words from initial response.`,
     );
+
+    // Adjust frontend to new wordlist size
+    this.adjustTotalParameters(this.wordlist.size);
 
     if (await this.stateManager.continueOrWait()) {
       this.stateManager.updateState(
@@ -125,11 +128,20 @@ export class ParamMiner {
   }
 
   private extractWordsFromResponse(response: string): number {
-    const words = response.split(/\s+/);
+    const cleanText = response
+      .replace(/[^a-zA-Z0-9\s-_]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const words = cleanText.split(" ").filter((word) => word.length > 2);
+
     const uniqueWords = new Set(words);
     for (const word of uniqueWords) {
-      this.wordlist.add(word);
+      if (word) {
+        this.wordlist.add(word);
+      }
     }
+
     return uniqueWords.size;
   }
 
@@ -220,5 +232,9 @@ export class ParamMiner {
 
   public log(message: string) {
     this.eventEmitter.emit("logs", message);
+  }
+
+  public adjustTotalParameters(newAmount: number) {
+    this.sdk.api.send("paramfinder:adjust", this.id, newAmount);
   }
 }

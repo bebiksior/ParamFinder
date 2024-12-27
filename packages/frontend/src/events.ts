@@ -10,6 +10,7 @@ export function setupEvents(sdk: FrontendSDK) {
     addRequestResponse,
     addFinding,
     addLog,
+    updateTotalParametersAmount,
   } = useSessionsStore.getState();
 
   sdk.backend.onEvent(
@@ -32,7 +33,6 @@ export function setupEvents(sdk: FrontendSDK) {
 
   sdk.backend.onEvent("paramfinder:complete", (miningID: string) => {
     console.log("paramfinder:complete", miningID);
-    addLog(miningID, `Mining session ${miningID} completed`);
   });
 
   sdk.backend.onEvent("paramfinder:log", (miningID: string, log: string) => {
@@ -101,11 +101,11 @@ export function setupEvents(sdk: FrontendSDK) {
     },
   );
 
-  // sdk.backend.onEvent(
-  //   "paramfinder:adjust",
-  //   (miningID: string, totalRequests: number) => {
-  //     console.log("paramfinder:adjust", miningID, totalRequests);
-  //     updateSessionTotalRequests(miningID, totalRequests);
-  //   },
-  // );
+  sdk.backend.onEvent(
+    "paramfinder:adjust",
+    (miningID: string, newAmount: number) => {
+      console.log("paramfinder:adjust", miningID, newAmount);
+      updateTotalParametersAmount(miningID, newAmount);
+    },
+  );
 }
