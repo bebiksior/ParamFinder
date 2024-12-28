@@ -111,7 +111,8 @@ export class StateManager {
   private isCanceledOrError(): boolean {
     return (
       this.state === MiningSessionState.Canceled ||
-      this.state === MiningSessionState.Error
+      this.state === MiningSessionState.Error ||
+      this.state === MiningSessionState.Timeout
     );
   }
 }
