@@ -31,9 +31,9 @@ interface StartMethodProps {
   imageAlt: string;
   maxWidth?: number;
   scaleHover?: number;
+  imagePosition?: "left top" | "right top" | "center top";
   children?: React.ReactNode;
 }
-
 function StartMethod({
   title,
   description,
@@ -44,6 +44,20 @@ function StartMethod({
   children,
 }: StartMethodProps) {
   const [isLoading, setIsLoading] = useState(true);
+  const [transformOrigin, setTransformOrigin] = useState("left top");
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLImageElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const windowWidth = window.innerWidth;
+    const spaceOnLeft = rect.left;
+    const spaceOnRight = windowWidth - rect.right;
+
+    if (spaceOnRight < spaceOnLeft) {
+      setTransformOrigin("right top");
+    } else {
+      setTransformOrigin("left top");
+    }
+  };
 
   return (
     <Paper
@@ -79,6 +93,7 @@ function StartMethod({
         src={imageSrc}
         alt={imageAlt}
         onLoad={() => setIsLoading(false)}
+        onMouseEnter={handleMouseEnter}
         sx={{
           width: "100%",
           maxWidth: `${maxWidth}px`,
@@ -91,9 +106,8 @@ function StartMethod({
           display: isLoading ? "none" : "block",
           "&:hover": {
             transform: `scale(${scaleHover})`,
-            transformOrigin: "left top",
+            transformOrigin,
             zIndex: 1000,
-            position: "relative",
           },
         }}
       />
@@ -122,95 +136,97 @@ function GettingStartedStep({
   );
 }
 
-export function UsagePage() {
-  const isMac = navigator.platform.toLowerCase().includes("mac");
-  const shortcut = isMac ? "⌘ + ⇧ + E" : "Ctrl + Shift + E";
-  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
-  const [isLoadingSponsors, setIsLoadingSponsors] = useState(true);
+function Sponsors() {
+  const [sponsorList, setSponsorList] = useState<Sponsor[]>([]);
+  const [isSponsorsLoading, setIsSponsorsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchSponsors() {
+    async function loadSponsors() {
       try {
         const response = await fetch(
           "https://gh-sponsors-api-seven.vercel.app/v3/sponsors/bebiksior"
         );
         const data: SponsorsResponse = await response.json();
         if (data.status === "success" && data.sponsors.current) {
-          setSponsors(data.sponsors.current);
+          setSponsorList(data.sponsors.current);
         }
       } catch (error) {
         console.error("Failed to fetch sponsors:", error);
       } finally {
-        setIsLoadingSponsors(false);
+        setIsSponsorsLoading(false);
       }
     }
-    fetchSponsors();
+
+    loadSponsors();
   }, []);
+
+  return (
+    <section>
+      <Typography
+        variant="h5"
+        gutterBottom
+        sx={{ color: "primary.main", fontWeight: 500, mb: 1 }}
+      >
+        Sponsors
+      </Typography>
+
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2 }}>
+        <Paper sx={{ p: 2 }}>
+          {isSponsorsLoading ? (
+            <Stack direction="row" spacing={1} bgcolor="transparent">
+              {[1, 2, 3, 4].map((index) => (
+                <Skeleton key={index} variant="circular" width={40} height={40} />
+              ))}
+            </Stack>
+          ) : sponsorList.length ? (
+            <Stack direction="row" spacing={3} bgcolor="transparent">
+              {sponsorList.map(({ username, avatar }) => (
+                <Stack
+                  key={username}
+                  alignItems="center"
+                  spacing={0.5}
+                  sx={{ bgcolor: "transparent" }}
+                >
+                  <Avatar alt={username} src={avatar} sx={{ width: 40, height: 40 }} />
+                  <Typography variant="caption" color="text.secondary">
+                    @{username}
+                  </Typography>
+                </Stack>
+              ))}
+            </Stack>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No sponsors yet
+            </Typography>
+          )}
+        </Paper>
+      </Box>
+
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        Thank you to all my amazing sponsors! Your support helps keep this project
+        going and motivates me to add new features.
+      </Typography>
+
+      <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic', color: 'primary.main' }}>
+        Special thanks to <a href="https://www.criticalthinkingpodcast.io/" target="_blank" rel="noopener noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>Critical Thinking Bug Bounty Podcast</a> for their continuous support across all my projects!
+      </Typography>
+    </section>
+  );
+}
+
+export function UsagePage() {
+  const isMac = navigator.platform.toLowerCase().includes("mac");
+  const shortcut = isMac ? "⌘ + ⇧ + E" : "Ctrl + Shift + E";
 
   return (
     <StyledBox
       padding={3}
-      className="overflow-y-auto"
+      className="overflow-y-auto overflow-x-hidden"
       sx={{ userSelect: "text" }}
     >
       <Stack spacing={4} divider={<Divider />} sx={{ bgcolor: "transparent" }}>
         <About />
-
-        <section>
-          <Typography
-            variant="h5"
-            gutterBottom
-            sx={{ color: "primary.main", fontWeight: 500, mb: 1 }}
-          >
-            Sponsors
-          </Typography>
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2 }}>
-            <Paper sx={{ p: 2 }}>
-              {isLoadingSponsors ? (
-                <Stack direction="row" spacing={1} bgcolor="transparent">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Skeleton
-                      key={i}
-                      variant="circular"
-                      width={40}
-                      height={40}
-                    />
-                  ))}
-                </Stack>
-              ) : sponsors.length > 0 ? (
-                <Stack direction="row" spacing={3} bgcolor="transparent">
-                  {sponsors.map((sponsor) => (
-                    <Stack
-                      key={sponsor.username}
-                      alignItems="center"
-                      spacing={0.5}
-                      sx={{ bgcolor: "transparent" }}
-                    >
-                      <Avatar
-                        alt={sponsor.username}
-                        src={sponsor.avatar}
-                        sx={{ width: 40, height: 40 }}
-                      />
-                      <Typography variant="caption" color="text.secondary">
-                        @{sponsor.username}
-                      </Typography>
-                    </Stack>
-                  ))}
-                </Stack>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No sponsors yet
-                </Typography>
-              )}
-            </Paper>
-          </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Thank you to all my amazing sponsors! Your support helps keep this
-            project going and motivates me to add new features.
-          </Typography>
-        </section>
-
+        <Sponsors />
         <section>
           <Typography
             variant="h5"
@@ -277,6 +293,15 @@ export function UsagePage() {
               imageSrc="https://raw.githubusercontent.com/bebiksior/ParamFinder/refs/heads/main/assets/ContextMenu.gif"
               imageAlt="Context menu usage demonstration"
               scaleHover={1.5}
+            />
+
+            <StartMethod
+              title="Custom Shortcuts"
+              description="You can create custom shortcuts for ParamFinder actions in Caido Settings → Shortcuts."
+              imageSrc="https://raw.githubusercontent.com/bebiksior/ParamFinder/refs/heads/main/assets/CustomShortcuts.gif"
+              imageAlt="Custom shortcuts usage demonstration"
+              scaleHover={2.5}
+              maxWidth={500}
             />
           </Box>
         </section>
