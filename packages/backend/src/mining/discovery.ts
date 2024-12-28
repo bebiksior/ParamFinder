@@ -361,25 +361,72 @@ export class ParamDiscovery {
     const maxSize = this.paramMiner.maxSize;
 
     if (attackType === "headers") {
-      const chunkSize = Math.min(
-        maxSize ?? ParamDiscovery.DEFAULT_HEADER_CHUNK_SIZE,
-        wordlist.length - this.lastWordlistIndex,
-      );
-
-      const chunk = wordlist
-        .slice(this.lastWordlistIndex, this.lastWordlistIndex + chunkSize)
-        .map((word) => ({
-          name: word,
-          value: this.randomParameterValue(),
-        }));
-
-      this.lastWordlistIndex += chunkSize;
-      return chunk;
+      return this.getNextHeaderChunk(wordlist, maxSize);
     }
 
+    if (attackType === "query") {
+      return this.getNextQueryChunk(wordlist, maxSize);
+    }
+
+    return this.getNextBodyChunk(wordlist, maxSize);
+  }
+
+  private getNextHeaderChunk(
+    wordlist: string[],
+    maxSize: number | undefined,
+  ): Parameter[] {
+    const chunkSize = Math.min(
+      maxSize ?? ParamDiscovery.DEFAULT_HEADER_CHUNK_SIZE,
+      wordlist.length - this.lastWordlistIndex,
+    );
+
+    const chunk = wordlist
+      .slice(this.lastWordlistIndex, this.lastWordlistIndex + chunkSize)
+      .map((word) => ({
+        name: word,
+        value: this.randomParameterValue(),
+      }));
+
+    this.lastWordlistIndex += chunkSize;
+    return chunk;
+  }
+
+  private getNextQueryChunk(
+    wordlist: string[],
+    maxSize: number | undefined,
+  ): Parameter[] {
     const parameterChunk: Parameter[] = [];
-    let currentSize =
-      attackType === "body" ? 2 : this.paramMiner.target.url.length; // Start with {} for JSON body or URL length for query
+    let currentSize = this.paramMiner.target.url.length;
+
+    while (this.lastWordlistIndex < wordlist.length) {
+      const word = wordlist[this.lastWordlistIndex];
+      if (!word) {
+        this.lastWordlistIndex++;
+        continue;
+      }
+
+      const encodedWord = encodeURIComponent(word);
+      const encodedValue = encodeURIComponent(this.randomParameterValue());
+      const paramSize = 2 + encodedWord.length + encodedValue.length;
+
+      if (maxSize && currentSize + paramSize > maxSize) {
+        break;
+      }
+
+      parameterChunk.push({ name: word, value: this.randomParameterValue() });
+      currentSize += paramSize;
+      this.lastWordlistIndex++;
+    }
+
+    return parameterChunk;
+  }
+
+  private getNextBodyChunk(
+    wordlist: string[],
+    maxSize: number | undefined,
+  ): Parameter[] {
+    const parameterChunk: Parameter[] = [];
+    let currentSize = 2;
 
     while (this.lastWordlistIndex < wordlist.length) {
       const word = wordlist[this.lastWordlistIndex];
@@ -391,21 +438,20 @@ export class ParamDiscovery {
       const encodedWord = encodeURIComponent(word);
       const encodedValue = encodeURIComponent(this.randomParameterValue());
 
-      const paramSize =
-        attackType === "body"
-          ? 6 + encodedWord.length + encodedValue.length // "key":"value",
-          : 2 + encodedWord.length + encodedValue.length; // key=value&
+      let paramSize = 6 + encodedWord.length + encodedValue.length;
 
-      // Check if adding this parameter would exceed maxSize
+      if (this.paramMiner.requester.bodyType === "multipart") {
+        const boundary =
+          this.paramMiner.requester.multipartBoundary.length || 40;
+
+        paramSize = 46 + boundary + encodedWord.length + encodedValue.length;
+      }
+
       if (maxSize && currentSize + paramSize > maxSize) {
         break;
       }
 
-      parameterChunk.push({
-        name: word,
-        value: this.randomParameterValue(),
-      });
-
+      parameterChunk.push({ name: word, value: this.randomParameterValue() });
       currentSize += paramSize;
       this.lastWordlistIndex++;
     }

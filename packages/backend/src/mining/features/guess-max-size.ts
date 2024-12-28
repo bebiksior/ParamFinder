@@ -29,8 +29,18 @@ export const sizeConfigs: Record<string, SizeConfig> = {
     ],
   },
   body: {
-    sizes: [100000, 50000, 25000, 10000],
-    defaultSize: 10000,
+    sizes: [50000, 30000, 16000, 8000, 4000, 2000],
+    defaultSize: 2000,
+    generateParams: (size) => [
+      {
+        name: "test",
+        value: randomString(size),
+      },
+    ],
+  },
+  multipart: {
+    sizes: [50000, 30000, 16000, 8000, 4000],
+    defaultSize: 4000,
     generateParams: (size) => [
       {
         name: "test",

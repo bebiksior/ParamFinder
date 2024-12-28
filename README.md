@@ -16,9 +16,9 @@ Discover hidden parameters straight from Caido!
 
 ## Roadmap to 1.0.0
 - [x] Rework of backend code for discovering parameters
-- [ ] Additional customization features and options
+- [x] Additional customization features and options
 - [x] Auto-detection of maximum URL size
 - [x] Performance mode where UI only stores and displays findings (ignores requests)
 - [ ] Concurrency
 - [x] Launch from Replay right-click menu ([#1](https://github.com/bebiksior/ParamFinder/issues/1))
-- [ ] Support for more body formats (currently only JSON and query params)
+- [x] Support for more body formats (currently only JSON and query params)

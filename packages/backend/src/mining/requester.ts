@@ -6,7 +6,8 @@ import { autopilotCheckResponse } from "./features/autopilot";
 
 export class Requester {
   private paramMiner: ParamMiner;
-  public bodyType: "json" | "query" | null = null;
+  public bodyType: "json" | "query" | "multipart" | null = null;
+  public multipartBoundary: string | null = null;
 
   constructor(paramMiner: ParamMiner) {
     this.paramMiner = paramMiner;
@@ -48,97 +49,177 @@ export class Requester {
 
     switch (attackType) {
       case "query":
-        // Add parameters to query string with URL encoding
-        const queryParams = parameters
-          .map(
-            (p) =>
-              `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`,
-          )
-          .join("&");
-        requestCopy.query = requestCopy.query
-          ? `${requestCopy.query}&${queryParams}`
-          : queryParams;
+        this.handleQueryParameters(requestCopy, parameters);
         break;
 
       case "headers":
-        parameters.forEach((p) => {
-          requestCopy.headers[p.name] = [p.value];
-        });
+        this.handleHeaderParameters(requestCopy, parameters);
         break;
 
-      case "body": {
-        const originalBody = request.body || "";
-        const contentType = request.headers["content-type"]?.[0]?.toLowerCase();
-
-        if (!this.bodyType) {
-          const isJSON =
-            this.isJSONBody(originalBody) ||
-            contentType?.includes("application/json");
-          const isQuery =
-            this.isQueryBody(originalBody) ||
-            contentType?.includes("application/x-www-form-urlencoded");
-
-          if (!isJSON && !isQuery) {
-            throw new Error(
-              "Body must be either JSON or URL-encoded query string",
-            );
-          }
-
-          this.bodyType = isJSON ? "json" : "query";
-          this.paramMiner.sdk.api.send(
-            "paramfinder:log",
-            this.paramMiner.id,
-            `Determined body format: ${this.bodyType}`,
-          );
-        }
-
-        if (this.bodyType === "json") {
-          let bodyObj = originalBody ? JSON.parse(originalBody) : {};
-          parameters.forEach((p) => {
-            bodyObj[p.name] = p.value;
-          });
-          requestCopy.body = JSON.stringify(bodyObj);
-          requestCopy.headers["content-type"] = ["application/json"];
-        } else {
-          const existingParams = originalBody ? originalBody + "&" : "";
-          const newParams = parameters
-            .map(
-              (p) =>
-                `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`,
-            )
-            .join("&");
-          requestCopy.body = existingParams + newParams;
-          requestCopy.headers["content-type"] = [
-            "application/x-www-form-urlencoded",
-          ];
-        }
+      case "body":
+        this.handleBodyParameters(requestCopy, parameters);
         break;
-      }
     }
 
     // Update Content-Length if needed
     if (this.paramMiner.config.updateContentLength) {
-      const contentLength = requestCopy.body.length;
-      if (contentLength == 0) {
-        delete requestCopy.headers["Content-Length"];
-      } else {
-        requestCopy.headers["Content-Length"] = [contentLength.toString()];
-      }
+      this.updateContentLength(requestCopy);
     }
 
     const requestResponse = await sendRequest(this.paramMiner.sdk, requestCopy);
 
     // Autopilot feature
-    if (this.paramMiner.config.autopilotEnabled && context == "discovery") {
+    if (this.paramMiner.config.autopilotEnabled && context === "discovery") {
       const hasTakenAction = autopilotCheckResponse(
         this.paramMiner,
         requestResponse,
       );
       if (hasTakenAction) {
-        this.paramMiner.sdk.console.log("Autopilot has taken aciton.");
+        this.paramMiner.sdk.console.log("Autopilot has taken action.");
       }
     }
 
     return requestResponse;
+  }
+
+  private handleQueryParameters(request: Request, parameters: Parameter[]) {
+    const queryParams = parameters
+      .map(
+        (p) => `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`,
+      )
+      .join("&");
+    request.query = request.query
+      ? `${request.query}&${queryParams}`
+      : queryParams;
+  }
+
+  private handleHeaderParameters(request: Request, parameters: Parameter[]) {
+    parameters.forEach((p) => {
+      request.headers[p.name] = [p.value];
+    });
+  }
+
+  private handleBodyParameters(request: Request, parameters: Parameter[]) {
+    const originalBody = request.body || "";
+    const contentType = request.headers["Content-Type"]?.[0]?.toLowerCase();
+
+    if (!this.bodyType) {
+      this.determineBodyType(originalBody, contentType);
+    }
+
+    switch (this.bodyType) {
+      case "json":
+        this.handleJSONBody(request, parameters, originalBody);
+        break;
+
+      case "query":
+        this.handleQueryBody(request, parameters, originalBody);
+        break;
+
+      case "multipart":
+        this.handleMultipartBody(request, parameters, originalBody);
+        break;
+
+      default:
+        throw new Error("Unsupported body type.");
+    }
+  }
+
+  private handleJSONBody(
+    request: Request,
+    parameters: Parameter[],
+    originalBody: string,
+  ) {
+    const bodyObj = originalBody ? JSON.parse(originalBody) : {};
+    parameters.forEach((p) => {
+      bodyObj[p.name] = p.value;
+    });
+    request.body = JSON.stringify(bodyObj);
+    request.headers["content-type"] = ["application/json"];
+  }
+
+  private handleQueryBody(
+    request: Request,
+    parameters: Parameter[],
+    originalBody: string,
+  ) {
+    const existingParams = originalBody ? originalBody + "&" : "";
+    const newParams = parameters
+      .map(
+        (p) => `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`,
+      )
+      .join("&");
+    request.body = existingParams + newParams;
+    request.headers["content-type"] = ["application/x-www-form-urlencoded"];
+  }
+
+  private handleMultipartBody(
+    request: Request,
+    parameters: Parameter[],
+    originalBody: string,
+  ) {
+    const originalContentType = request.headers["Content-Type"]?.[0];
+    if (!originalContentType) throw new Error("Missing Content-Type header");
+
+    const boundaryMatch = originalContentType.match(/boundary=(.+)/);
+    if (!boundaryMatch) throw new Error("Missing multipart boundary");
+
+    const boundary = boundaryMatch[1];
+    const finalBoundary = `--${boundary}--`;
+    const finalIndex = originalBody.indexOf(finalBoundary);
+    if (finalIndex === -1)
+      throw new Error("Invalid multipart body: cannot find final boundary");
+
+    let bodyUpToFinalBoundary = originalBody.slice(0, finalIndex);
+    if (!bodyUpToFinalBoundary.endsWith("\r\n")) {
+      bodyUpToFinalBoundary += "\r\n";
+    }
+
+    for (const p of parameters) {
+      bodyUpToFinalBoundary += `--${boundary}\r\nContent-Disposition: form-data; name="${p.name}"\r\n\r\n${p.value}\r\n`;
+    }
+
+    bodyUpToFinalBoundary += finalBoundary;
+    request.body = bodyUpToFinalBoundary;
+    request.headers["Content-Type"] = [originalContentType];
+    this.multipartBoundary = boundary;
+  }
+
+  private determineBodyType(body: string, contentType: string | undefined) {
+    // Check content-type first
+    if (contentType) {
+      if (contentType.includes("application/json")) {
+        this.bodyType = "json";
+      } else if (contentType.includes("application/x-www-form-urlencoded")) {
+        this.bodyType = "query";
+      } else if (contentType.includes("multipart/form-data")) {
+        this.bodyType = "multipart";
+      }
+    }
+
+    if (!this.bodyType) {
+      if (this.isJSONBody(body)) {
+        this.bodyType = "json";
+      } else if (this.isQueryBody(body)) {
+        this.bodyType = "query";
+      } else {
+        throw new Error("Unsupported body type detected.");
+      }
+    }
+
+    this.paramMiner.sdk.api.send(
+      "paramfinder:log",
+      this.paramMiner.id,
+      `Determined body format: ${this.bodyType}`,
+    );
+  }
+
+  private updateContentLength(request: Request) {
+    const contentLength = request.body.length;
+    if (contentLength === 0) {
+      delete request.headers["Content-Length"];
+    } else {
+      request.headers["Content-Length"] = [contentLength.toString()];
+    }
   }
 }
