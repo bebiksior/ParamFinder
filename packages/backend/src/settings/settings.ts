@@ -13,7 +13,7 @@ class SettingsStore {
     this.settings = {
       delay: 20,
       concurrency: 5,
-      timeout: 10 * 60,
+      timeout: 15 * 60,
       autoDetectMaxSize: true,
       performanceMode: false,
       learnRequestsCount: 8,
