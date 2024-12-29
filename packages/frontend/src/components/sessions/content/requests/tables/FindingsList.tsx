@@ -127,7 +127,7 @@ export default function FindingsList() {
               <TableRow
                 key={row.requestResponse.request.id}
                 hover
-                selected={row.requestResponse.request.id === selectedRequestId}
+                selected={row.requestResponse && row.requestResponse.request.id === selectedRequestId}
                 onClick={() => handleClick(row.requestResponse.request.id)}
                 sx={{ cursor: "pointer" }}
               >

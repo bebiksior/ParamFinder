@@ -13,6 +13,7 @@ import { useCallback, useState } from "react";
 import { useUIStore } from "@/stores/uiStore";
 import { useSessionsStore } from "@/stores/sessionsStore";
 import { useShallow } from "zustand/shallow";
+import { EmptyPanel } from "@/components/common/EmptyPanel";
 
 type SortField = "id" | "status" | "length" | "time";
 type SortDirection = "asc" | "desc";
@@ -32,6 +33,10 @@ export default function RequestList() {
         (sentReq) => sentReq.requestResponse,
       );
     }),
+  );
+
+  const isPerformanceMode = requestResponses.some(
+    (reqRes) => reqRes === null
   );
 
   const handleClick = useCallback(
@@ -70,6 +75,12 @@ export default function RequestList() {
   });
 
   if (!activeSessionId) return null;
+
+  if (isPerformanceMode) {
+    return (
+      <EmptyPanel message="Performance Mode is enabled. Request details are not available in this mode." />
+    );
+  }
 
   return (
     <StyledBox className="overflow-auto">
@@ -121,7 +132,7 @@ export default function RequestList() {
               <TableRow
                 key={row.request.id}
                 hover
-                selected={row.request.id === selectedRequestId}
+                selected={row.request && row.request.id === selectedRequestId}
                 onClick={() => handleClick(row.request.id)}
                 sx={{ cursor: "pointer" }}
               >
