@@ -38,7 +38,7 @@ export class AnomalyDetector {
     if (this.wafResponse) {
       if (
         this.wafResponse.status === response.status &&
-        stringSimilarity(this.wafResponse.body, responseBody) > 0.95
+        stringSimilarity(this.wafResponse.body, responseBody) > 0.85
       ) {
         return undefined;
       }
@@ -74,19 +74,37 @@ export class AnomalyDetector {
     // Check headers if they're stable
     if (this.stableFactors.headersStable) {
       const initialHeaders = this.initialRequestResponse.response.headers;
+      const currentHeaders = response.headers;
+
+      // Check for missing or modified headers from initial response
       for (const [key, value] of Object.entries(initialHeaders)) {
         if (this.stableFactors.unstableHeaders.has(key)) {
           continue;
         }
 
         if (
-          !response.headers[key] ||
-          JSON.stringify(response.headers[key]) !== JSON.stringify(value)
+          !currentHeaders[key] ||
+          JSON.stringify(currentHeaders[key]) !== JSON.stringify(value)
         ) {
           return {
             type: AnomalyType.Headers,
             from: JSON.stringify(value),
-            to: JSON.stringify(response.headers[key]),
+            to: JSON.stringify(currentHeaders[key]),
+            which: key,
+          };
+        }
+      }
+
+      // Check for new headers not present in initial response
+      for (const key of Object.keys(currentHeaders)) {
+        if (
+          !this.stableFactors.unstableHeaders.has(key) &&
+          !initialHeaders[key]
+        ) {
+          return {
+            type: AnomalyType.Headers,
+            from: "N/A",
+            to: JSON.stringify(currentHeaders[key]),
             which: key,
           };
         }
@@ -247,6 +265,7 @@ export class AnomalyDetector {
 
     this.stableFactors = stable;
     this.paramMiner.eventEmitter.emit("debug", "[anomaly.ts] Learning phase completed");
+    this.paramMiner.eventEmitter.emit("debug", `[anomaly.ts] Factors: ${JSON.stringify(stable)}`);
   }
 
   private checkFactors(
