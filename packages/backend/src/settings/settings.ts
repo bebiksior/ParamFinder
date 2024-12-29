@@ -21,6 +21,7 @@ class SettingsStore {
       debug: false,
       autopilotEnabled: true,
       updateContentLength: true,
+      ignoreAnomalyTypes: [],
     };
     this.sdk = sdk;
 

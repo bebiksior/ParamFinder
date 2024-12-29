@@ -1,5 +1,6 @@
+import { AnomalyType } from "./anomaly";
 import { RequestResponse } from "./requests";
-import { Finding, MiningSessionPhase, MiningSessionState } from "./sessions";
+import { Finding } from "./sessions";
 
 export interface ParamMinerEvents {
   onFinding: (finding: Finding) => void;
@@ -34,4 +35,5 @@ export type ParamMinerConfig = {
   performanceMode: boolean;
   wafDetection: boolean;
   debug: boolean;
+  ignoreAnomalyTypes: AnomalyType[];
 };

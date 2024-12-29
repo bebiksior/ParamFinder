@@ -185,3 +185,27 @@ export function getSelectedRequest(sdk: FrontendSDK) {
       throw new Error("Can't obtain selected request");
   }
 }
+
+export function formatTimeout(milliseconds: number): string {
+    if (milliseconds < 1000) {
+      return `${milliseconds} milliseconds`;
+    }
+
+    const minutes = Math.floor(milliseconds / 60000);
+    const seconds = Math.floor((milliseconds % 60000) / 1000);
+    const remainingMilliseconds = milliseconds % 1000;
+
+    const parts: string[] = [];
+
+    if (minutes > 0) {
+      parts.push(`${minutes} minute${minutes > 1 ? "s" : ""}`);
+    }
+    if (seconds > 0) {
+      parts.push(`${seconds} second${seconds > 1 ? "s" : ""}`);
+    }
+    if (remainingMilliseconds > 0) {
+      parts.push(`${remainingMilliseconds} milliseconds`);
+    }
+
+    return parts.join(" and ");
+  }

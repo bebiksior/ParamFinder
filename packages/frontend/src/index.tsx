@@ -92,6 +92,7 @@ function setupCommands(sdk: FrontendSDK) {
         debug: settings.debug,
         updateContentLength: settings.updateContentLength,
         autopilotEnabled: settings.autopilotEnabled,
+        ignoreAnomalyTypes: settings.ignoreAnomalyTypes,
       }),
       sdk,
     );

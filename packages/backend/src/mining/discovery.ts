@@ -42,7 +42,9 @@ export class ParamDiscovery {
       await this.processParameters(timeout, startTime);
     } catch (error) {
       this.emitDebug(
-        `Discovery error: ${error instanceof Error ? error.message : String(error)}`,
+        `Discovery error: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
       return;
     }
@@ -54,26 +56,30 @@ export class ParamDiscovery {
 
   private async processParameters(
     timeout: number,
-    startTime: number,
+    startTime: number
   ): Promise<void> {
     while (this.hasMoreParameters()) {
-      if (!(await this.paramMiner.stateManager.continueOrWait())) {
-        this.emitDebug("Discovery canceled or errored");
-        return;
-      }
+      try {
+        if (!(await this.paramMiner.stateManager.continueOrWait())) {
+          this.emitDebug("Discovery canceled or errored");
+          return;
+        }
 
-      if (this.isTimedOut(startTime, timeout)) {
-        this.handleTimeout(timeout);
-        return;
-      }
+        if (this.isTimedOut(startTime, timeout)) {
+          this.handleTimeout(timeout);
+          return;
+        }
 
-      const chunk = this.getNextWordlistChunk();
-      if (chunk.length === 0) {
-        this.emitDebug("No more parameters to process");
-        break;
-      }
+        const chunk = this.getNextWordlistChunk();
+        if (chunk.length === 0) {
+          this.emitDebug("No more parameters to process");
+          break;
+        }
 
-      await this.processChunk(chunk);
+        await this.processChunk(chunk);
+      } catch (error) {
+        this.emitDebug(`Error processing chunk: ${error}`);
+      }
     }
   }
 
@@ -108,7 +114,7 @@ export class ParamDiscovery {
 
     const anomaly = this.paramMiner.anomalyDetector.hasChanges(
       result.requestResponse.response,
-      chunk,
+      chunk
     );
 
     if (anomaly) {
@@ -119,7 +125,7 @@ export class ParamDiscovery {
   }
 
   private async sendRequest(
-    chunk: Parameter[],
+    chunk: Parameter[]
   ): Promise<ChunkResult | undefined> {
     this.emitDebug(`Sending request with ${chunk.length} parameters...`);
     const query = this.buildQueryString(chunk);
@@ -129,7 +135,7 @@ export class ParamDiscovery {
       await this.paramMiner.requester.sendRequestWithParams(
         this.paramMiner.target,
         chunk,
-        "discovery",
+        "discovery"
       );
 
     return { requestResponse, parameters: chunk };
@@ -139,7 +145,7 @@ export class ParamDiscovery {
     return parameters
       .map(
         (param) =>
-          `${encodeURIComponent(param.name)}=${encodeURIComponent(param.value)}`,
+          `${encodeURIComponent(param.name)}=${encodeURIComponent(param.value)}`
       )
       .join("&");
   }
@@ -151,12 +157,16 @@ export class ParamDiscovery {
   private handleRateLimit(): void {
     this.emitDebug("Rate limit detected (429)");
     this.emitLog(
-      "Rate limited, cancelling discovery. Please adjust delay between requests.",
+      "Rate limited, cancelling discovery. Please adjust delay between requests."
     );
     this.paramMiner.updateState(MiningSessionState.Canceled);
   }
 
   private async handleAnomaly(chunk: Parameter[], anomaly: any): Promise<void> {
+    if (this.paramMiner.config.ignoreAnomalyTypes.includes(anomaly.type)) {
+      return;
+    }
+
     this.emitDebug(`Initial anomaly detected: ${anomaly.type}`);
 
     const verifyResult = await this.verifyAnomaly(chunk);
@@ -170,13 +180,13 @@ export class ParamDiscovery {
   }
 
   private async verifyAnomaly(
-    chunk: Parameter[],
+    chunk: Parameter[]
   ): Promise<ChunkResult | undefined> {
     const verifyRequestResponse =
       await this.paramMiner.requester.sendRequestWithParams(
         this.paramMiner.target,
         chunk,
-        "narrower",
+        "narrower"
       );
 
     this.emit("responseReceived", 0, verifyRequestResponse);
@@ -188,7 +198,7 @@ export class ParamDiscovery {
 
     const verifyAnomaly = this.paramMiner.anomalyDetector.hasChanges(
       verifyRequestResponse.response,
-      chunk,
+      chunk
     );
 
     return verifyAnomaly
@@ -202,7 +212,7 @@ export class ParamDiscovery {
 
   private async processVerifiedAnomaly(
     chunk: Parameter[],
-    verifyResult: ChunkResult,
+    verifyResult: ChunkResult
   ): Promise<void> {
     this.emitDebug(`Anomaly verified: ${verifyResult.anomalyType}`);
     this.emitAnomalyLog(chunk.length, verifyResult);
@@ -224,13 +234,13 @@ export class ParamDiscovery {
     const anomaly = result.anomalyType;
     this.emitLog(
       `Anomaly ${anomaly.toUpperCase()} detected in response. ` +
-        `Narrowing down ${chunkLength} parameters.`,
+        `Narrowing down ${chunkLength} parameters.`
     );
   }
 
   private async delay(): Promise<void> {
     await new Promise((resolve) =>
-      setTimeout(resolve, this.paramMiner.config.delayBetweenRequests),
+      setTimeout(resolve, this.paramMiner.config.delayBetweenRequests)
     );
   }
 
@@ -247,7 +257,7 @@ export class ParamDiscovery {
     const chunksToProcess: Parameter[][] = [chunk];
 
     this.emitDebug(
-      `Starting narrowDownWordlist with ${chunk.length} parameters`,
+      `Starting narrowDownWordlist with ${chunk.length} parameters`
     );
 
     while (chunksToProcess.length > 0) {
@@ -266,7 +276,7 @@ export class ParamDiscovery {
         await this.paramMiner.requester.sendRequestWithParams(
           this.paramMiner.target,
           currentChunk,
-          "narrower",
+          "narrower"
         );
 
       this.emit("responseReceived", 0, { request, response });
@@ -281,7 +291,7 @@ export class ParamDiscovery {
 
       const anomaly = this.paramMiner.anomalyDetector.hasChanges(
         response,
-        currentChunk,
+        currentChunk
       );
 
       if (anomaly) {
@@ -295,7 +305,7 @@ export class ParamDiscovery {
             await this.paramMiner.requester.sendRequestWithParams(
               this.paramMiner.target,
               currentChunk,
-              "narrower",
+              "narrower"
             );
 
           this.emit("responseReceived", 0, {
@@ -310,12 +320,12 @@ export class ParamDiscovery {
 
           const verifyAnomaly = this.paramMiner.anomalyDetector.hasChanges(
             verifyResponse,
-            currentChunk,
+            currentChunk
           );
 
           if (verifyAnomaly) {
             this.emitDebug(
-              `Parameter verified: ${parameter.name} (${verifyAnomaly.type})`,
+              `Parameter verified: ${parameter.name} (${verifyAnomaly.type})`
             );
             findings.push({
               requestResponse: { request, response: verifyResponse },
@@ -331,19 +341,19 @@ export class ParamDiscovery {
           const secondHalf = currentChunk.slice(mid);
 
           this.emitDebug(
-            `Splitting chunk into ${firstHalf.length} and ${secondHalf.length} parameters`,
+            `Splitting chunk into ${firstHalf.length} and ${secondHalf.length} parameters`
           );
           chunksToProcess.push(secondHalf);
           chunksToProcess.push(firstHalf);
         }
       } else {
         this.emitDebug(
-          `No anomaly detected for chunk of ${currentChunk.length} parameters`,
+          `No anomaly detected for chunk of ${currentChunk.length} parameters`
         );
       }
 
       await new Promise((resolve) =>
-        setTimeout(resolve, this.paramMiner.config.delayBetweenRequests),
+        setTimeout(resolve, this.paramMiner.config.delayBetweenRequests)
       );
     }
 
@@ -373,11 +383,11 @@ export class ParamDiscovery {
 
   private getNextHeaderChunk(
     wordlist: string[],
-    maxSize: number | undefined,
+    maxSize: number | undefined
   ): Parameter[] {
     const chunkSize = Math.min(
       maxSize ?? ParamDiscovery.DEFAULT_HEADER_CHUNK_SIZE,
-      wordlist.length - this.lastWordlistIndex,
+      wordlist.length - this.lastWordlistIndex
     );
 
     const chunk = wordlist
@@ -393,7 +403,7 @@ export class ParamDiscovery {
 
   private getNextQueryChunk(
     wordlist: string[],
-    maxSize: number | undefined,
+    maxSize: number | undefined
   ): Parameter[] {
     const parameterChunk: Parameter[] = [];
     let currentSize = this.paramMiner.target.url.length;
@@ -423,7 +433,7 @@ export class ParamDiscovery {
 
   private getNextBodyChunk(
     wordlist: string[],
-    maxSize: number | undefined,
+    maxSize: number | undefined
   ): Parameter[] {
     const parameterChunk: Parameter[] = [];
     let currentSize = 2;

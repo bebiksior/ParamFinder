@@ -19,15 +19,15 @@ export async function getSettings(sdk: BackendSDK): Promise<Result<Settings>> {
 export async function updateSettings(
   sdk: BackendSDK,
   settings: Settings,
-): Promise<Result<void>> {
+): Promise<Result<Settings>> {
   const settingsStore = getSettingsStore();
 
   try {
     if (!settingsStore) {
       return error("Settings store not initialized");
     }
-    settingsStore.updateSettings(settings);
-    return ok(void 0);
+    const newSettings = settingsStore.updateSettings(settings);
+    return ok(newSettings);
   } catch (err) {
     return error(err instanceof Error ? err.message : String(err));
   }

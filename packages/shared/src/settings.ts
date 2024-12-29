@@ -1,3 +1,5 @@
+import { AnomalyType } from "./anomaly";
+
 export type Settings = {
   delay: number; // delay between requests in milliseconds
   concurrency: number; // number of concurrent requests
@@ -12,4 +14,5 @@ export type Settings = {
   debug: boolean;
   autopilotEnabled: boolean;
   updateContentLength: boolean;
+  ignoreAnomalyTypes: AnomalyType[];
 };
