@@ -38,7 +38,9 @@ export function randomString(length: number) {
 
 /* ID generator */
 export function generateID() {
-  return Date.now().toString(36) + randomString(5);
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 7);
+  return timestamp.padStart(8, '0') + random;
 }
 
 /* Will write a file and return the path */
