@@ -39,6 +39,12 @@ export default function RequestList() {
     (reqRes) => reqRes === null
   );
 
+  if (isPerformanceMode) {
+    return (
+      <EmptyPanel message="Performance Mode is enabled. Request details are not available in this mode." />
+    );
+  }
+
   const handleClick = useCallback(
     (id: string) => {
       setSelectedRequest(id);
@@ -75,12 +81,6 @@ export default function RequestList() {
   });
 
   if (!activeSessionId) return null;
-
-  if (isPerformanceMode) {
-    return (
-      <EmptyPanel message="Performance Mode is enabled. Request details are not available in this mode." />
-    );
-  }
 
   return (
     <StyledBox className="overflow-auto">

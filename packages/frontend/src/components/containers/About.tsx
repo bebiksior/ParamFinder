@@ -45,11 +45,6 @@ export function About() {
         .
       </Typography>
       <Typography variant="body1" sx={{ mt: 1 }}>
-        Please note that ParamFinder is currently in beta, and some features
-        like concurrency are not implemented yet. Your feedback and bug reports
-        are highly appreciated!
-      </Typography>
-      <Typography variant="body1" sx={{ mt: 1 }}>
         Feel free to contribute to the project :D You can submit feature
         requests and report bugs via the GitHub issues page. I'm always looking
         for new ideas and improvements!
