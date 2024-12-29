@@ -15,6 +15,7 @@ export type StableFactors = ResponseFactors & {
   reflectionStable: boolean;
   headersStable: boolean;
   similarityStable: boolean;
+  redirectStable: boolean;
 };
 
 export type Anomaly = {

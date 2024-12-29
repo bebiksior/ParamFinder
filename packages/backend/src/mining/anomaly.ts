@@ -58,7 +58,7 @@ export class AnomalyDetector {
     }
 
     // Check if redirect is stable
-    if (this.stableFactors.redirect) {
+    if (this.stableFactors.redirect && this.stableFactors.redirectStable) {
       if (
         response.headers["Location"] &&
         response.headers["Location"][0] !== this.stableFactors.redirect
@@ -257,6 +257,7 @@ export class AnomalyDetector {
         ...newFactors.unstableHeaders,
       ]);
       stable.redirect = newFactors.redirect;
+      stable.redirectStable = stable.redirectStable && newFactors.redirectStable;
 
       if (stable.reflectionsCount != newFactors.reflectionsCount) {
         stable.reflectionStable = false;
@@ -278,6 +279,7 @@ export class AnomalyDetector {
       statusCodeStable: true,
       reflectionStable: true,
       similarityStable: true,
+      redirectStable: true,
       reflectionsCount: 0,
       statusCode: response.status,
       unstableHeaders: new Set<string>(defaultUnstableHeaders),
@@ -287,6 +289,11 @@ export class AnomalyDetector {
     const locationHeader = response.headers["Location"];
     if (locationHeader) {
       stable.redirect = locationHeader[0];
+
+      const initialLocationHeader = this.initialRequestResponse?.response.headers["Location"];
+      if (initialLocationHeader) {
+        stable.redirectStable = initialLocationHeader[0] === stable.redirect;
+      }
     }
 
     const responseBody = response.body || "";
