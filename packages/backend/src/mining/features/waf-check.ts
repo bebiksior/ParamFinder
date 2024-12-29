@@ -2,7 +2,7 @@ import { ParamMiner } from "../param-miner";
 import { Parameter, Response } from "shared";
 
 // Common WAF trigger patterns
-const WAF_PATTERNS = ["/etc/passwd", ".htaccess", "javascript:alert"];
+const WAF_PATTERNS = ["/etc/passwd", ".htaccess", "javascript:alert", "onload=alert"];
 
 export async function checkForWAF(
   paramMiner: ParamMiner,
