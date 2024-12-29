@@ -24,7 +24,7 @@ export const RequestSettingsSection = () => {
         Request Settings
       </Typography>
 
-      <Stack spacing={3} sx={{ backgroundColor: "transparent" }}>
+      <Stack spacing={3}>
         <TextField
           label="Request Delay (ms)"
           type="number"

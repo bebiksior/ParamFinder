@@ -173,19 +173,18 @@ function Sponsors() {
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2 }}>
         <Paper sx={{ p: 2 }}>
           {isSponsorsLoading ? (
-            <Stack direction="row" spacing={1} bgcolor="transparent">
+            <Stack direction="row" spacing={1}>
               {[1, 2, 3, 4].map((index) => (
                 <Skeleton key={index} variant="circular" width={40} height={40} />
               ))}
             </Stack>
           ) : sponsorList.length ? (
-            <Stack direction="row" spacing={3} bgcolor="transparent">
+            <Stack direction="row" spacing={3}>
               {sponsorList.map(({ username, avatar }) => (
                 <Stack
                   key={username}
                   alignItems="center"
                   spacing={0.5}
-                  sx={{ bgcolor: "transparent" }}
                 >
                   <Avatar alt={username} src={avatar} sx={{ width: 40, height: 40 }} />
                   <Typography variant="caption" color="text.secondary">
@@ -224,7 +223,7 @@ export function UsagePage() {
       className="overflow-y-auto overflow-x-hidden"
       sx={{ userSelect: "text" }}
     >
-      <Stack spacing={4} divider={<Divider />} sx={{ bgcolor: "transparent" }}>
+      <Stack spacing={4} divider={<Divider />}>
         <About />
         <Sponsors />
         <section>
@@ -269,7 +268,7 @@ export function UsagePage() {
               <Stack
                 component="ul"
                 spacing={0.5}
-                sx={{ pl: 2, mt: 1, bgcolor: "transparent" }}
+                sx={{ pl: 2, mt: 1}}
               >
                 {[
                   ["QUERY", "Discover parameters in URL query string"],
@@ -315,7 +314,7 @@ export function UsagePage() {
             Getting Started
           </Typography>
           <Paper sx={{ p: 4, borderRadius: 2 }}>
-            <Stack spacing={3} sx={{ bgcolor: "transparent" }}>
+            <Stack spacing={3}>
               <GettingStartedStep number={1} title="Upload a Wordlist">
                 <Typography sx={{ lineHeight: 1.8, color: "text.secondary" }}>
                   Before starting, make sure you have at least one wordlist
@@ -342,7 +341,6 @@ export function UsagePage() {
                   sx={{
                     pl: 2,
                     mt: 1.5,
-                    bgcolor: "transparent",
                   }}
                 >
                   {[
@@ -376,7 +374,6 @@ export function UsagePage() {
                   sx={{
                     pl: 2,
                     mt: 1.5,
-                    bgcolor: "transparent",
                   }}
                 >
                   {[

@@ -12,14 +12,11 @@ import {
   Chip,
   Box,
   MenuItem,
+  Tooltip,
 } from "@mui/material";
 import { AnomalyType } from "shared";
-import { useCallback
- } from "react";
-import {
-    useSettings,
-  useUpdateSettingsField,
-} from "@/stores/settingsStore";
+import { useCallback } from "react";
+import { useSettings, useUpdateSettingsField } from "@/stores/settingsStore";
 import { EmptyPanel } from "../common/EmptyPanel";
 
 export const AdvancedSettingsSection = () => {
@@ -56,30 +53,27 @@ export const AdvancedSettingsSection = () => {
         Advanced Settings
       </Typography>
 
-      <Stack spacing={2} sx={{ backgroundColor: "transparent" }}>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={settings.autoDetectMaxSize}
-              onChange={handleAutoDetectMaxSizeChange}
+      <Stack spacing={1}>
+        <Box key="autoDetectMaxSize">
+          <Tooltip title="Automatically detect maximum request size limits based on server responses" placement="right">
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={settings.autoDetectMaxSize}
+                  onChange={handleAutoDetectMaxSizeChange}
+                />
+              }
+              label="Auto Detect Max Request Size"
             />
-          }
-          label="Auto Detect Max Request Size"
-        />
+          </Tooltip>
+        </Box>
 
         {!settings.autoDetectMaxSize && (
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{
-              backgroundColor: "transparent",
-              flexWrap: "wrap",
-              gap: 2,
-            }}
-          >
+          <Stack direction="row" spacing={2}>
             <TextField
-              label="Max Query Size"
+              label="Max URL Size"
               type="number"
+              helperText="Maximum size of URL server can handle at a time"
               value={settings.maxQuerySize ?? ""}
               onChange={(e) =>
                 updateSettingsField({
@@ -92,6 +86,7 @@ export const AdvancedSettingsSection = () => {
             <TextField
               label="Max Header Size"
               type="number"
+              helperText="Maximum size of headers server can handle at a time"
               value={settings.maxHeaderSize ?? ""}
               onChange={(e) =>
                 updateSettingsField({
@@ -104,6 +99,7 @@ export const AdvancedSettingsSection = () => {
             <TextField
               label="Max Body Size"
               type="number"
+              helperText="Maximum size of body server can handle at a time"
               value={settings.maxBodySize ?? ""}
               onChange={(e) =>
                 updateSettingsField({
@@ -115,71 +111,84 @@ export const AdvancedSettingsSection = () => {
           </Stack>
         )}
 
-        <Stack spacing={2} sx={{ backgroundColor: "transparent" }}>
-          {[
-            { field: "wafDetection" as const, label: "WAF Detection" },
-            { field: "autopilotEnabled" as const, label: "Autopilot Feature" },
-            {
-              field: "updateContentLength" as const,
-              label: "Update Content-Length",
-            },
-            {
-              field: "debug" as const,
-              label: "Debug Mode (extensive logging)",
-            },
-            {
-              field: "performanceMode" as const,
-              label: "Performance Mode (receive only findings)",
-            },
-          ].map(({ field, label }) => (
-            <FormControlLabel
-              key={field}
-              control={
-                <Switch
-                  checked={settings[field]}
-                  onChange={toggleSetting(field)}
-                />
-              }
-              label={label}
-            />
-          ))}
-        </Stack>
+        {[
+          {
+            field: "wafDetection" as const,
+            label: "WAF Detection",
+            tooltip: "Automatically detect and adjust to WAFs",
+          },
+          {
+            field: "autopilotEnabled" as const,
+            label: "Autopilot Feature",
+            tooltip:
+              "Automatically adjust settings based on target response as we go",
+          },
+          {
+            field: "updateContentLength" as const,
+            label: "Update Content-Length",
+            tooltip:
+              "Automatically update Content-Length header when modifying requests",
+          },
+          {
+            field: "debug" as const,
+            label: "Debug Mode (extensive logging)",
+            tooltip: "Enable detailed logging for troubleshooting",
+          },
+          {
+            field: "performanceMode" as const,
+            label: "Performance Mode",
+            tooltip:
+              "Only receive findings, omit request data to reduce memory usage",
+          },
+        ].map(({ field, label, tooltip }) => (
+          <Box key={field}>
+            <Tooltip title={tooltip} placement="right">
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={settings[field]}
+                    onChange={toggleSetting(field)}
+                  />
+                }
+                label={label}
+              />
+            </Tooltip>
+          </Box>
+        ))}
 
-        <Stack spacing={1} sx={{ backgroundColor: "transparent" }}>
-          <FormControl fullWidth>
-            <InputLabel id="ignore-anomaly-types-label">
-              Anomaly Types To Ignore
-            </InputLabel>
-            <Select
-              labelId="ignore-anomaly-types-label"
-              multiple
-              value={settings.ignoreAnomalyTypes}
-              onChange={(e) =>
-                updateSettingsField({
-                  ignoreAnomalyTypes: e.target.value as AnomalyType[],
-                })
-              }
-              input={<OutlinedInput label="Anomaly Types To Ignore" />}
-              renderValue={(selected) => (
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                  {(selected as AnomalyType[]).map((value) => (
-                    <Chip key={value} label={value} />
-                  ))}
-                </Box>
-              )}
-            >
-              {Object.values(AnomalyType).map((type) => (
-                <MenuItem key={type} value={type}>
-                  {type}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <Typography variant="caption" color="text.secondary">
-            Some targets may exhibit unusual behavior that triggers false
-            positives. Use this setting to ignore specific anomaly types.
-          </Typography>
-        </Stack>
+        <FormControl fullWidth>
+          <InputLabel id="ignore-anomaly-types-label">
+            Anomaly Types To Ignore
+          </InputLabel>
+          <Select
+            labelId="ignore-anomaly-types-label"
+            multiple
+            value={settings.ignoreAnomalyTypes}
+            onChange={(e) =>
+              updateSettingsField({
+                ignoreAnomalyTypes: e.target.value as AnomalyType[],
+              })
+            }
+            input={<OutlinedInput label="Anomaly Types To Ignore" />}
+            renderValue={(selected) => (
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                {(selected as AnomalyType[]).map((value) => (
+                  <Chip key={value} label={value} />
+                ))}
+              </Box>
+            )}
+          >
+            {Object.values(AnomalyType).map((type) => (
+              <MenuItem key={type} value={type}>
+                {type}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <Typography variant="caption" color="text.secondary">
+          Some targets may exhibit unusual behavior that triggers false
+          positives. Use this setting to ignore specific anomaly types.
+        </Typography>
       </Stack>
     </Paper>
   );
