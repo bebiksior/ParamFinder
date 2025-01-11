@@ -70,7 +70,7 @@ export class Requester {
 
     // Autopilot feature
     if (this.paramMiner.config.autopilotEnabled && context === "discovery") {
-      const hasTakenAction = autopilotCheckResponse(
+      const hasTakenAction = await autopilotCheckResponse(
         this.paramMiner,
         requestResponse,
       );
