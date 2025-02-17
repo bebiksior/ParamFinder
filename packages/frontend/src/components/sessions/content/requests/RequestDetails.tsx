@@ -33,6 +33,9 @@ export default function RequestDetails() {
       <HTTPEditor
         value={selectedRequestResponse.request.raw || ""}
         type="request"
+        host={selectedRequestResponse.request.host}
+        port={selectedRequestResponse.request.port}
+        isTls={selectedRequestResponse.request.tls}
       />
       <HTTPEditor
         value={selectedRequestResponse.response.raw || ""}
