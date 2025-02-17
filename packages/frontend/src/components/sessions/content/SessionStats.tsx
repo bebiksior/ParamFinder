@@ -43,13 +43,13 @@ export function SessionStats() {
         totalParametersAmount: activeSession.totalParametersAmount,
         totalLearnRequests: activeSession.totalLearnRequests,
       };
-    }),
+    })
   );
 
   if (!activeSessionData) return null;
 
   const discoveryRequests = activeSessionData.sentRequests.filter(
-    (request) => request.context === "discovery",
+    (request) => request.context === "discovery"
   );
 
   const parametersTested = discoveryRequests.reduce((acc, request) => {
@@ -58,14 +58,14 @@ export function SessionStats() {
 
   const totalRequestsSent = activeSessionData.sentRequests.length;
   const learningRequestsAmount = activeSessionData.sentRequests.filter(
-    (request) => request.context === "learning",
+    (request) => request.context === "learning"
   ).length;
 
   const progress =
     activeSessionData.phase === MiningSessionPhase.Learning
       ? Math.min(
           (learningRequestsAmount / activeSessionData.totalLearnRequests) * 100,
-          100,
+          100
         )
       : (parametersTested / activeSessionData.totalParametersAmount) * 100;
 

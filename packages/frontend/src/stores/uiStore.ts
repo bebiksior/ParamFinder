@@ -1,11 +1,12 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 export const VIEW_CATEGORIES = {
   FINDINGS: "findings",
   REQUESTS: "requests",
 } as const;
 
-export type ViewCategory = (typeof VIEW_CATEGORIES)[keyof typeof VIEW_CATEGORIES];
+export type ViewCategory =
+  (typeof VIEW_CATEGORIES)[keyof typeof VIEW_CATEGORIES];
 
 interface SessionsUIState {
   selectedRequestId: string | null;

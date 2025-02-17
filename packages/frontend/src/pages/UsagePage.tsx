@@ -175,18 +175,23 @@ function Sponsors() {
           {isSponsorsLoading ? (
             <Stack direction="row" spacing={1}>
               {[1, 2, 3, 4].map((index) => (
-                <Skeleton key={index} variant="circular" width={40} height={40} />
+                <Skeleton
+                  key={index}
+                  variant="circular"
+                  width={40}
+                  height={40}
+                />
               ))}
             </Stack>
           ) : sponsorList.length ? (
             <Stack direction="row" spacing={3}>
               {sponsorList.map(({ username, avatar }) => (
-                <Stack
-                  key={username}
-                  alignItems="center"
-                  spacing={0.5}
-                >
-                  <Avatar alt={username} src={avatar} sx={{ width: 40, height: 40 }} />
+                <Stack key={username} alignItems="center" spacing={0.5}>
+                  <Avatar
+                    alt={username}
+                    src={avatar}
+                    sx={{ width: 40, height: 40 }}
+                  />
                   <Typography variant="caption" color="text.secondary">
                     @{username}
                   </Typography>
@@ -202,12 +207,24 @@ function Sponsors() {
       </Box>
 
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        Thank you to all my amazing sponsors! Your support helps keep this project
-        going and motivates me to add new features.
+        Thank you to all my amazing sponsors! Your support helps keep this
+        project going and motivates me to add new features.
       </Typography>
 
-      <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic', color: 'primary.main' }}>
-        Special thanks to <a href="https://www.criticalthinkingpodcast.io/" target="_blank" rel="noopener noreferrer" style={{color: 'inherit', textDecoration: 'underline'}}>Critical Thinking Bug Bounty Podcast</a> for their continuous support across all my projects!
+      <Typography
+        variant="body2"
+        sx={{ mt: 2, fontStyle: "italic", color: "primary.main" }}
+      >
+        Special thanks to{" "}
+        <a
+          href="https://www.criticalthinkingpodcast.io/"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "inherit", textDecoration: "underline" }}
+        >
+          Critical Thinking Bug Bounty Podcast
+        </a>{" "}
+        for their continuous support across all my projects!
       </Typography>
     </section>
   );
@@ -265,11 +282,7 @@ export function UsagePage() {
               maxWidth={600}
               scaleHover={1.5}
             >
-              <Stack
-                component="ul"
-                spacing={0.5}
-                sx={{ pl: 2, mt: 1}}
-              >
+              <Stack component="ul" spacing={0.5} sx={{ pl: 2, mt: 1 }}>
                 {[
                   ["QUERY", "Discover parameters in URL query string"],
                   ["BODY", "Find parameters in request body"],

@@ -474,6 +474,13 @@ export class ParamDiscovery {
   }
 
   private hasMoreParameters(): boolean {
+    this.emit(
+      "debug",
+      "hasMoreParameters called with " +
+        this.lastWordlistIndex +
+        " and " +
+        this.paramMiner.wordlist.size
+    );
     return this.lastWordlistIndex < this.paramMiner.wordlist.size;
   }
 
