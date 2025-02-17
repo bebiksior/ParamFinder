@@ -44,7 +44,7 @@ export class ParamMiner {
 
   public async addWordlist(path: string) {
     const wordlist = await readFile(path, "utf-8");
-    const lines = wordlist.split("\n");
+    const lines = wordlist.split(/\r?\n/);
     for (const line of lines) {
       this.wordlist.add(line);
     }
