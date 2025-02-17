@@ -46,6 +46,7 @@ export class ParamMiner {
     const wordlist = await readFile(path, "utf-8");
     const lines = wordlist.split(/\r?\n/);
     for (const line of lines) {
+      if (line.trim() === "") continue;
       this.wordlist.add(line);
     }
   }
@@ -53,7 +54,7 @@ export class ParamMiner {
   public async start(): Promise<void> {
     this.stateManager.updateState(
       MiningSessionState.Learning,
-      MiningSessionPhase.Learning,
+      MiningSessionPhase.Learning
     );
     this.validateConfig();
 
@@ -73,7 +74,7 @@ export class ParamMiner {
     if (this.config.autoDetectMaxSize) {
       this.eventEmitter.emit(
         "logs",
-        `Auto-detecting max ${this.config.attackType} size...`,
+        `Auto-detecting max ${this.config.attackType} size...`
       );
       this.maxSize = await guessMaxSize(this);
       if (!(await this.stateManager.continueOrWait())) return;
@@ -90,7 +91,7 @@ export class ParamMiner {
     if (this.maxSize) {
       this.eventEmitter.emit(
         "logs",
-        `Max ${this.config.attackType} size: ${this.maxSize}`,
+        `Max ${this.config.attackType} size: ${this.maxSize}`
       );
     }
 
@@ -108,11 +109,11 @@ export class ParamMiner {
     }
 
     const wordsAmount = this.extractWordsFromResponse(
-      this.anomalyDetector.initialRequestResponse?.response.body || "",
+      this.anomalyDetector.initialRequestResponse?.response.body || ""
     );
     this.eventEmitter.emit(
       "logs",
-      `Extracted ${wordsAmount} words from initial response.`,
+      `Extracted ${wordsAmount} words from initial response.`
     );
 
     // Adjust frontend to new wordlist size
@@ -121,7 +122,7 @@ export class ParamMiner {
     if (await this.stateManager.continueOrWait()) {
       this.stateManager.updateState(
         MiningSessionState.Running,
-        MiningSessionPhase.Discovery,
+        MiningSessionPhase.Discovery
       );
       await this.paramDiscovery.startDiscovery();
     }
@@ -204,7 +205,7 @@ export class ParamMiner {
   }
 
   onStateChange(
-    callback: (state: MiningSessionState, phase?: MiningSessionPhase) => void,
+    callback: (state: MiningSessionState, phase?: MiningSessionPhase) => void
   ) {
     this.eventEmitter.on("stateChange", callback);
   }
@@ -214,10 +215,7 @@ export class ParamMiner {
   }
 
   onProgress(
-    callback: (
-      parametersSent: number,
-      requestResponse: RequestResponse,
-    ) => void,
+    callback: (parametersSent: number, requestResponse: RequestResponse) => void
   ) {
     this.eventEmitter.on("responseReceived", callback);
   }
