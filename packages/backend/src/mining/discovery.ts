@@ -157,9 +157,9 @@ export class ParamDiscovery {
   private handleRateLimit(): void {
     this.emitDebug("Rate limit detected (429)");
     this.emitLog(
-      "Rate limited, cancelling discovery. Please adjust delay between requests."
+      "Rate limited, pausing discovery. Please adjust delay between requests."
     );
-    this.paramMiner.updateState(MiningSessionState.Canceled);
+    this.paramMiner.updateState(MiningSessionState.Paused);
   }
 
   private async handleAnomaly(chunk: Parameter[], anomaly: any): Promise<void> {
