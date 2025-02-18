@@ -34,6 +34,7 @@ export type ParamMinerConfig = {
   concurrency: number;
   performanceMode: boolean;
   wafDetection: boolean;
+  additionalChecks: boolean;
   debug: boolean;
   ignoreAnomalyTypes: AnomalyType[];
 };

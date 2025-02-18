@@ -11,6 +11,7 @@ export type Settings = {
   performanceMode: boolean;
   learnRequestsCount: number;
   wafDetection: boolean;
+  additionalChecks: boolean;
   debug: boolean;
   autopilotEnabled: boolean;
   updateContentLength: boolean;

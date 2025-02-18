@@ -89,6 +89,7 @@ function setupCommands(sdk: FrontendSDK) {
         maxHeaderSize: settings.maxHeaderSize,
         maxBodySize: settings.maxBodySize,
         wafDetection: settings.wafDetection,
+        additionalChecks: settings.additionalChecks,
         debug: settings.debug,
         updateContentLength: settings.updateContentLength,
         autopilotEnabled: settings.autopilotEnabled,

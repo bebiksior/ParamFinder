@@ -5,3 +5,4 @@ export * from "./requests";
 export * from "./wordlists";
 export * from "./settings";
 export * from "./sessions";
+export * from "./features";

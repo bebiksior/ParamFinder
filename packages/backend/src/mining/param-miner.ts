@@ -1,5 +1,10 @@
 import { readFile } from "fs/promises";
-import { MiningSessionPhase, ParamMinerConfig, ParamMinerEvents } from "shared";
+import {
+  AdditionalChecksResult,
+  MiningSessionPhase,
+  ParamMinerConfig,
+  ParamMinerEvents,
+} from "shared";
 import { Request, RequestResponse } from "shared";
 import { Finding, MiningSessionState } from "shared";
 import { AnomalyDetector } from "./anomaly";
@@ -11,6 +16,7 @@ import { BackendSDK } from "../types/types";
 import { generateID } from "../util/helper";
 import { checkForWAF } from "./features/waf-check";
 import { StateManager } from "./state-manager";
+import { performAdditionalChecks } from "./features/additional-checks";
 
 export class ParamMiner {
   public sdk: BackendSDK;
@@ -19,6 +25,7 @@ export class ParamMiner {
   public requester: Requester;
   public id: string;
   public anomalyDetector: AnomalyDetector;
+  public additionalChecksResult: AdditionalChecksResult;
   public paramDiscovery: ParamDiscovery;
   public eventEmitter: EventEmitter;
   public wordlist: Set<string>;
@@ -105,6 +112,34 @@ export class ParamMiner {
         this.anomalyDetector.setWafResponse(wafResponse);
       } else {
         this.log("No WAF detected");
+      }
+    }
+
+    if (this.config.additionalChecks) {
+      this.log("Performing additional learning checks...");
+      this.additionalChecksResult = await performAdditionalChecks(this);
+      this.log("Additional learning checks completed");
+
+      if (!(await this.stateManager.continueOrWait())) return;
+
+      if (!this.additionalChecksResult.handlesSpecialCharacters) {
+        if (!this.additionalChecksResult.handlesEncodedSpecialCharacters) {
+          // Remove words with special characters from wordlist
+          this.wordlist = new Set(
+            Array.from(this.wordlist).filter(
+              (word) => !/[^a-zA-Z0-9-_]/.test(word)
+            )
+          );
+        } else {
+          // URL encode special characters in each word
+          this.wordlist = new Set(
+            Array.from(this.wordlist).map((word) =>
+              word.replace(/[^a-zA-Z0-9-_]/g, (char) =>
+                encodeURIComponent(char)
+              )
+            )
+          );
+        }
       }
     }
 

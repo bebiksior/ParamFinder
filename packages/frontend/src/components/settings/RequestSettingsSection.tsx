@@ -56,7 +56,7 @@ export const RequestSettingsSection = () => {
           type="number"
           value={settings.learnRequestsCount}
           onChange={handleNumberChange("learnRequestsCount")}
-          helperText="Minimum value is 3. Recommended value is 8 or more."
+          helperText="Minimum value is 3. Recommended value is 6 or more."
           fullWidth
         />
 

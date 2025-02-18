@@ -30,7 +30,7 @@ export const AdvancedSettingsSection = () => {
           [field]: e.target.checked,
         });
       },
-    [settings, updateSettingsField]
+    [settings, updateSettingsField],
   );
 
   const handleAutoDetectMaxSizeChange = useCallback(
@@ -42,7 +42,7 @@ export const AdvancedSettingsSection = () => {
         maxBodySize: e.target.checked ? undefined : settings.maxBodySize,
       });
     },
-    [settings, updateSettingsField]
+    [settings, updateSettingsField],
   );
 
   if (isLoading) return <EmptyPanel message="Loading settings..." />;
@@ -55,7 +55,10 @@ export const AdvancedSettingsSection = () => {
 
       <Stack spacing={1}>
         <Box key="autoDetectMaxSize">
-          <Tooltip title="Automatically detect maximum request size limits based on server responses" placement="right">
+          <Tooltip
+            title="Automatically detect maximum request size limits based on server responses"
+            placement="right"
+          >
             <FormControlLabel
               control={
                 <Switch
@@ -116,6 +119,12 @@ export const AdvancedSettingsSection = () => {
             field: "wafDetection" as const,
             label: "WAF Detection",
             tooltip: "Automatically detect and adjust to WAFs",
+          },
+          {
+            field: "additionalChecks" as const,
+            label: "Additional Checks",
+            tooltip:
+              "Perform additional learning checks to prevent false positives",
           },
           {
             field: "autopilotEnabled" as const,
