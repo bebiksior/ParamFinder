@@ -6,6 +6,7 @@ interface UseWordlistImportReturn {
   uploadProgress: number | null;
   handleFileImport: () => void;
   handlePresetImport: (url: string) => Promise<void>;
+  handleImport: (content: string, filename: string) => Promise<void>;
 }
 
 export function useWordlistImport(
@@ -47,6 +48,13 @@ export function useWordlistImport(
     input.click();
   }, [handleUpload]);
 
+  const handleImport = useCallback(
+    async (content: string, filename: string) => {
+      await handleUpload(content, filename);
+    },
+    [handleUpload]
+  );
+
   const handlePresetImport = useCallback(
     async (url: string) => {
       try {
@@ -66,6 +74,7 @@ export function useWordlistImport(
 
   return {
     uploadProgress,
+    handleImport,
     handleFileImport,
     handlePresetImport,
   };
