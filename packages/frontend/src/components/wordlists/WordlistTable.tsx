@@ -10,20 +10,23 @@ import {
   Button,
   Checkbox,
   Box,
+  Chip,
 } from "@mui/material";
-import type { Wordlist } from "shared";
+import type { Wordlist, AttackType } from "shared";
 import { memo } from "react";
 
 interface WordlistTableProps {
   wordlists: Wordlist[];
   onToggle: (path: string, enabled: boolean) => void;
   onRemove: (path: string) => void;
+  onUpdateAttackTypes: (path: string, attackTypes: AttackType[]) => void;
 }
 
 export const WordlistTable = memo(function WordlistTable({
   wordlists,
   onToggle,
   onRemove,
+  onUpdateAttackTypes,
 }: WordlistTableProps) {
   return (
     <Box>
@@ -40,6 +43,7 @@ export const WordlistTable = memo(function WordlistTable({
             <TableRow>
               <TableCell>Enabled</TableCell>
               <TableCell>Path</TableCell>
+              <TableCell>Attack Types</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -60,6 +64,29 @@ export const WordlistTable = memo(function WordlistTable({
                     />
                   </TableCell>
                   <TableCell className="select-text">{wordlist.path}</TableCell>
+                  <TableCell>
+                    {["body", "headers", "query", "targeted"].map((attackType) => {
+                      const isSelected = wordlist.attackTypes.includes(attackType as AttackType);
+                      const handleClick = () => {
+                        const newAttackTypes = isSelected
+                          ? wordlist.attackTypes.filter(type => type !== attackType)
+                          : [...wordlist.attackTypes, attackType as AttackType];
+                        onUpdateAttackTypes(wordlist.path, newAttackTypes);
+                      };
+
+                      return (
+                        <Chip key={attackType}
+                          label={attackType}
+                          onClick={handleClick}
+                          color={isSelected ? "primary" : "default"}
+                          variant={isSelected ? "filled" : "outlined"}
+                          size="small"
+                          sx={{ marginRight: 1 }}
+                          style={{ cursor: "pointer" }}
+                        />
+                      );
+                    })}
+                  </TableCell>
                   <TableCell align="right">
                     <Button
                       color="error"

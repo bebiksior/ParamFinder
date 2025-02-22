@@ -1,4 +1,4 @@
-import { error, ok, Result, Wordlist } from "shared";
+import { error, ok, Result, Wordlist, AttackType } from "shared";
 import { BackendSDK } from "../types/types";
 import { getWordlistManager } from "../wordlists/wordlists";
 import { writeToFile } from "../util/helper";
@@ -79,6 +79,24 @@ export async function toggleWordlist(
       return error("Wordlist manager not initialized");
     }
     await wordlistManager.toggleWordlist(path, enabled);
+    return ok(void 0);
+  } catch (err) {
+    return error(err instanceof Error ? err.message : String(err));
+  }
+}
+
+export async function updateAttackTypes(
+  sdk: BackendSDK,
+  path: string,
+  attackTypes: AttackType[],
+): Promise<Result<void>> {
+  const wordlistManager = getWordlistManager();
+
+  try {
+    if (!wordlistManager) {
+      return error("Wordlist manager not initialized");
+    }
+    await wordlistManager.updateAttackTypes(path, attackTypes);
     return ok(void 0);
   } catch (err) {
     return error(err instanceof Error ? err.message : String(err));

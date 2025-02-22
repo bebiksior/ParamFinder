@@ -16,6 +16,7 @@ import {
   importWordlist,
   removeWordlistPath,
   toggleWordlist,
+  updateAttackTypes,
 } from "./api/wordlists";
 import {
   cancelWordlistUpload,
@@ -45,6 +46,7 @@ export type API = DefineAPI<{
   clearWordlists: typeof clearWordlists;
   importWordlist: typeof importWordlist;
   toggleWordlist: typeof toggleWordlist;
+  updateAttackTypes: typeof updateAttackTypes;
 
   // Uploader
   startWordlistUpload: typeof startWordlistUpload;
@@ -77,6 +79,7 @@ export function init(sdk: SDK<API>) {
   sdk.api.register("clearWordlists", clearWordlists);
   sdk.api.register("importWordlist", importWordlist);
   sdk.api.register("toggleWordlist", toggleWordlist);
+  sdk.api.register("updateAttackTypes", updateAttackTypes);
 
   // Uploader
   sdk.api.register("startWordlistUpload", startWordlistUpload);

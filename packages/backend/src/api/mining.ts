@@ -25,7 +25,7 @@ export async function startMining(
       return error("Settings not found");
     }
 
-    if (wordlists.filter((wordlist) => wordlist.enabled).length === 0) {
+    if (wordlists.filter((wordlist) => wordlist.enabled && wordlist.attackTypes.includes(config.attackType)).length === 0) {
       return error(
         "No enabled wordlists found. Please upload a wordlist first.",
       );
@@ -34,7 +34,7 @@ export async function startMining(
     const paramMiner = new ParamMiner(sdk, target, config);
     await Promise.all(
       wordlists.map(async (wordlist) => {
-        if (wordlist.enabled) {
+        if (wordlist.enabled && wordlist.attackTypes.includes(config.attackType)) {
           await paramMiner.addWordlist(wordlist.path);
           sdk.console.log(`[WORDLIST] Added ${wordlist.path}`);
         }

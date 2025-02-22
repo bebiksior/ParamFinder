@@ -1,5 +1,5 @@
 import { SDK } from "caido:plugin";
-import { Wordlist } from "shared";
+import { Wordlist, AttackType } from "shared";
 import { Database } from "sqlite";
 import { deleteFile } from "../util/helper";
 import { BackendSDK } from "../types/types";
@@ -33,6 +33,7 @@ class WordlistManager {
     await this.database.exec(`
       CREATE TABLE wordlists (
         path TEXT PRIMARY KEY,
+        attack_types TEXT,
         enabled INTEGER DEFAULT 1
       )
     `);
@@ -40,14 +41,14 @@ class WordlistManager {
     return true;
   }
 
-  async addWordlistPath(path: string, enabled: boolean = true): Promise<void> {
+  async addWordlistPath(path: string, enabled: boolean = true, attackTypes: AttackType[] = ["body", "headers", "query", "targeted"]): Promise<void> {
     if (!this.database) throw new Error("Database not initialized");
 
     const startTime = Date.now();
     const statement = await this.database.prepare(
-      "INSERT OR IGNORE INTO wordlists (path, enabled) VALUES (?, ?)",
+      "INSERT OR IGNORE INTO wordlists (path, enabled, attack_types) VALUES (?, ?, ?)",
     );
-    await statement.run(path, enabled ? 1 : 0);
+    await statement.run(path, enabled ? 1 : 0, attackTypes.join(","));
 
     const timeTaken = Date.now() - startTime;
     this.sdk.console.log(`[DATABASE] Added wordlist path in ${timeTaken}ms`);
@@ -74,11 +75,12 @@ class WordlistManager {
 
     const startTime = Date.now();
     const statement = await this.database.prepare(
-      "SELECT path, enabled FROM wordlists",
+      "SELECT path, enabled, attack_types FROM wordlists",
     );
     const rows = (await statement.all()) as Array<{
       path: string;
       enabled: number;
+      attack_types: string;
     }>;
 
     const timeTaken = Date.now() - startTime;
@@ -87,6 +89,7 @@ class WordlistManager {
     return rows.map((row) => ({
       path: row.path,
       enabled: Boolean(row.enabled),
+      attackTypes: row.attack_types.split(",") as AttackType[],
     }));
   }
 
@@ -117,6 +120,19 @@ class WordlistManager {
 
     const timeTaken = Date.now() - startTime;
     this.sdk.console.log(`[DATABASE] Cleared wordlists in ${timeTaken}ms`);
+  }
+
+  async updateAttackTypes(path: string, attackTypes: AttackType[]): Promise<void> {
+    if (!this.database) throw new Error("Database not initialized");
+
+    const startTime = Date.now();
+    const statement = await this.database.prepare(
+      "UPDATE wordlists SET attack_types = ? WHERE path = ?",
+    );
+    await statement.run(attackTypes.join(","), path);
+
+    const timeTaken = Date.now() - startTime;
+    this.sdk.console.log(`[DATABASE] Updated attack types in ${timeTaken}ms`);
   }
 }
 

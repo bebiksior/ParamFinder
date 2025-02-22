@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSDK } from "./sdkStore";
 import { handleBackendCall } from "@/utils/utils";
+import { AttackType } from "shared";
 const WORDLISTS_QUERY_KEY = ["wordlists"] as const;
 
 export function useWordlists() {
@@ -13,6 +14,19 @@ export function useWordlists() {
   });
 }
 
+export function useUpdateAttackTypes() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ path, attackTypes }: { path: string; attackTypes: AttackType[] }) => {
+      const sdk = getSDK();
+      await handleBackendCall(sdk.backend.updateAttackTypes(path, attackTypes), sdk);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: WORDLISTS_QUERY_KEY });
+    },
+  });
+}
 export function useAddWordlist() {
   const queryClient = useQueryClient();
 

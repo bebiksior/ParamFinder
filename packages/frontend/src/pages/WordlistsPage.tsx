@@ -16,6 +16,7 @@ import { PresetWordlists } from "@/components/wordlists/PresetWordlists";
 import { useWordlistImport } from "@/hooks/useWordlistImport";
 import { useWordlistActions } from "@/hooks/useWordlistActions";
 import { memo, useState } from "react";
+import { AttackType } from "shared";
 
 interface WordlistHeaderProps {
   onImport: () => void;
@@ -51,6 +52,7 @@ interface WordlistContentProps {
   onToggle: (path: string, enabled: boolean) => void;
   onRemove: (id: string) => void;
   onPresetImport: (preset: string) => void;
+  onUpdateAttackTypes: (path: string, attackTypes: AttackType[]) => void;
 }
 
 const WordlistContent = memo(function WordlistContent({
@@ -58,6 +60,7 @@ const WordlistContent = memo(function WordlistContent({
   onToggle,
   onRemove,
   onPresetImport,
+  onUpdateAttackTypes,
 }: WordlistContentProps) {
   return (
     <>
@@ -65,6 +68,7 @@ const WordlistContent = memo(function WordlistContent({
         wordlists={wordlists}
         onToggle={onToggle}
         onRemove={onRemove}
+        onUpdateAttackTypes={onUpdateAttackTypes}
       />
       <PresetWordlists onImport={onPresetImport} />
     </>
@@ -83,7 +87,7 @@ export default function WordlistsPage() {
   const { uploadProgress, handleFileImport, handleImport, handlePresetImport } =
     useWordlistImport(refreshWordlist);
 
-  const { removeWordlist, clearWordlists, handleToggleWordlist } =
+  const { removeWordlist, clearWordlists, handleToggleWordlist, handleUpdateAttackTypes } =
     useWordlistActions();
 
   const handleCreateWordlist = async () => {
@@ -96,6 +100,7 @@ export default function WordlistsPage() {
     }
   };
 
+  if (isLoading) return <Typography>Loading...</Typography>;
   if (isLoading) return <Typography>Loading...</Typography>;
 
   return (
@@ -114,6 +119,7 @@ export default function WordlistsPage() {
           onToggle={handleToggleWordlist}
           onRemove={removeWordlist}
           onPresetImport={handlePresetImport}
+          onUpdateAttackTypes={handleUpdateAttackTypes}
         />
       </Box>
 
