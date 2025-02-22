@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "jsonpath-plus": "^10.3.0",
     "shared": "workspace:*"
   },
   "devDependencies": {

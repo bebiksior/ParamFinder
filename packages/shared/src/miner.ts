@@ -18,7 +18,7 @@ export type MiningError = {
   message: string;
 };
 
-export type AttackType = "query" | "body" | "headers";
+export type AttackType = "query" | "body" | "headers" | "targeted";
 
 export type ParamMinerConfig = {
   attackType: AttackType;

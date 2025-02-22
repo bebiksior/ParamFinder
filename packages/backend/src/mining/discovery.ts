@@ -370,15 +370,17 @@ export class ParamDiscovery {
     const attackType = this.paramMiner.config.attackType;
     const maxSize = this.paramMiner.maxSize;
 
-    if (attackType === "headers") {
-      return this.getNextHeaderChunk(wordlist, maxSize);
+    switch (attackType) {
+      case "headers":
+        return this.getNextHeaderChunk(wordlist, maxSize);
+      case "query":
+        return this.getNextQueryChunk(wordlist, maxSize);
+      case "targeted":
+      case "body":
+        return this.getNextBodyChunk(wordlist, maxSize);
+      default:
+        throw new Error(`Unknown attack type: ${attackType}`);
     }
-
-    if (attackType === "query") {
-      return this.getNextQueryChunk(wordlist, maxSize);
-    }
-
-    return this.getNextBodyChunk(wordlist, maxSize);
   }
 
   private getNextHeaderChunk(

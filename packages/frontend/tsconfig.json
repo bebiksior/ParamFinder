@@ -9,5 +9,5 @@
     },
     "strict": false
   },
-  "include": ["./src/**/*.tsx", "./src/**/*.tsx"]
+  "include": ["./src/**/*.tsx", "./src/**/*.ts"]
 }

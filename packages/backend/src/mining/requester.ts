@@ -3,6 +3,7 @@ import { Request, Parameter, RequestContext } from "shared";
 import { ParamMiner } from "./param-miner";
 import { generateID } from "../util/helper";
 import { autopilotCheckResponse } from "./features/autopilot";
+import { JSONPath } from 'jsonpath-plus';
 
 export class Requester {
   private paramMiner: ParamMiner;
@@ -56,6 +57,7 @@ export class Requester {
         this.handleHeaderParameters(requestCopy, parameters);
         break;
 
+      case "targeted":
       case "body":
         this.handleBodyParameters(requestCopy, parameters);
         break;
@@ -128,14 +130,45 @@ export class Requester {
   private handleJSONBody(
     request: Request,
     parameters: Parameter[],
-    originalBody: string,
-  ) {
-    const bodyObj = originalBody ? JSON.parse(originalBody) : {};
-    parameters.forEach((p) => {
-      bodyObj[p.name] = p.value;
-    });
-    request.body = JSON.stringify(bodyObj);
-    request.headers["content-type"] = ["application/json"];
+    originalBody: string
+  ): void {
+    try {
+      const bodyObj = originalBody ? JSON.parse(originalBody) : {};
+
+      if (request.bodyJSONPath) {
+        const jsonPath = request.bodyJSONPath.startsWith("$")
+          ? request.bodyJSONPath
+          : `$.${request.bodyJSONPath}`;
+
+        const paramsToInject = parameters.reduce(
+          (acc, param) => ({
+            ...acc,
+            [param.name]: param.value,
+          }),
+          {}
+        );
+
+        const target = JSONPath({
+          path: jsonPath,
+          json: bodyObj,
+          wrap: false,
+        });
+
+        if (target && typeof target === "object") {
+          Object.assign(target, paramsToInject);
+        }
+      } else {
+        // If no path specified, add parameters to root
+        parameters.forEach((p) => {
+          bodyObj[p.name] = p.value;
+        });
+      }
+
+      request.body = JSON.stringify(bodyObj);
+      request.headers["content-type"] = ["application/json"];
+    } catch (error) {
+      throw new Error(`Failed to handle JSON body: ${error.message}`);
+    }
   }
 
   private handleQueryBody(

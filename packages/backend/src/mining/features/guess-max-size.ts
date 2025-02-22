@@ -23,7 +23,7 @@ export const sizeConfigs: Record<string, SizeConfig> = {
     defaultSize: 500,
     generateParams: (size) => [
       {
-        name: "test",
+        name: "paramFinderTest",
         value: randomString(size),
       },
     ],
@@ -33,7 +33,17 @@ export const sizeConfigs: Record<string, SizeConfig> = {
     defaultSize: 2000,
     generateParams: (size) => [
       {
-        name: "test",
+        name: "paramFinderTest",
+        value: randomString(size),
+      },
+    ],
+  },
+  targeted: {
+    sizes: [50000, 30000, 16000, 8000, 4000, 2000],
+    defaultSize: 2000,
+    generateParams: (size) => [
+      {
+        name: "paramFinderTest",
         value: randomString(size),
       },
     ],
@@ -43,7 +53,7 @@ export const sizeConfigs: Record<string, SizeConfig> = {
     defaultSize: 4000,
     generateParams: (size) => [
       {
-        name: "test",
+        name: "paramFinderTest",
         value: randomString(size),
       },
     ],

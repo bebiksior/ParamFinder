@@ -15,6 +15,8 @@ import { CommandContext } from "@caido/sdk-frontend/src/types";
 import { AttackType, Request, Settings } from "shared";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createQuickMenu } from "./quickmenu/quickmenu";
+import { CustomDialog } from "@/components/dialog/dialog";
+import { JSONPath } from "jsonpath-plus";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,7 +43,7 @@ function setupUI(sdk: FrontendSDK) {
   root.render(
     <QueryClientProvider client={queryClient}>
       <App />
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
 
   return rootElement;
@@ -52,7 +54,7 @@ function setupUI(sdk: FrontendSDK) {
  */
 let sidebarCount = 0;
 function setupCommands(sdk: FrontendSDK) {
-  const attackTypes = ["query", "body", "headers"] as AttackType[];
+  const attackTypes = ["query", "body", "headers", "targeted"] as AttackType[];
 
   let currentPath = window.location.hash;
   const observer = new MutationObserver(() => {
@@ -74,7 +76,7 @@ function setupCommands(sdk: FrontendSDK) {
   async function handleMining(
     request: Request,
     settings: Settings,
-    attackType: AttackType,
+    attackType: AttackType
   ) {
     const result = await handleBackendCall(
       sdk.backend.startMining(request, {
@@ -95,7 +97,7 @@ function setupCommands(sdk: FrontendSDK) {
         autopilotEnabled: settings.autopilotEnabled,
         ignoreAnomalyTypes: settings.ignoreAnomalyTypes,
       }),
-      sdk,
+      sdk
     );
 
     sdk.window.showToast("Started ParamFinder session", {
@@ -111,12 +113,12 @@ function setupCommands(sdk: FrontendSDK) {
 
   async function handleRequestRowContext(
     requests: any[],
-    attackType: AttackType,
+    attackType: AttackType
   ) {
     for (const req of requests) {
       const request = await handleBackendCall(
         sdk.backend.getRequest(req.id),
-        sdk,
+        sdk
       );
       const settings = await handleBackendCall(sdk.backend.getSettings(), sdk);
       await handleMining(request, settings, attackType);
@@ -132,7 +134,10 @@ function setupCommands(sdk: FrontendSDK) {
       path: string;
       query: string;
     },
-    attackType: AttackType,
+    options: {
+      attackType: AttackType;
+      bodyJSONPath?: string;
+    }
   ) {
     const settings = await handleBackendCall(sdk.backend.getSettings(), sdk);
     const parsedRequest = parseRequest(request.raw);
@@ -151,39 +156,107 @@ function setupCommands(sdk: FrontendSDK) {
       tls: request.isTls,
       context: "discovery",
       raw: request.raw,
+      bodyJSONPath: options.bodyJSONPath,
     };
 
-    await handleMining(_request, settings, attackType);
+    await handleMining(_request, settings, options.attackType);
   }
 
   async function handleCommandRun(
     context: CommandContext,
-    attackType: AttackType,
+    attackType: AttackType
   ) {
     if (context.type === "RequestRowContext") {
+      if (attackType === "targeted") {
+        sdk.window.showToast(
+          "Targeted attack type is not supported for multiple requests. Select a single request instead.",
+          {
+            variant: "error",
+          }
+        );
+        return;
+      }
+
       const requests = context.requests.slice(0, 25);
       await handleRequestRowContext(requests, attackType);
     }
 
+    async function validateJSONBody(parsedRequest: any): Promise<boolean> {
+      try {
+        if (!parsedRequest.body) return false;
+        JSON.parse(parsedRequest.body);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    async function showTargetedDialog(requestData: any, attackType: AttackType) {
+      new CustomDialog({
+        initialValue: "$",
+        title: "Enter JSON path to run targeted scan",
+        onValidate: (value) => {
+          const parsedRequest = parseRequest(requestData.raw);
+
+          const target = JSONPath({
+            path: value,
+            json: JSON.parse(parsedRequest.body),
+            wrap: false,
+          });
+
+          return target !== undefined;
+        },
+        onSubmit: async (value) => {
+          await handleSingleRequest(requestData, {
+            attackType,
+            bodyJSONPath: value,
+          });
+        },
+      }).show();
+    }
+
     if (context.type === "RequestContext") {
-      await handleSingleRequest(context.request, attackType);
+      const parsedReq = parseRequest(context.request.raw);
+
+      if (attackType === "targeted") {
+        if (!await validateJSONBody(parsedReq)) {
+          sdk.window.showToast("Targeted scan requires valid JSON request body", {
+            variant: "error"
+          });
+          return;
+        }
+        await showTargetedDialog(context.request, attackType);
+        return;
+      }
+
+      await handleSingleRequest(context.request, { attackType });
     }
 
     if (context.type === "BaseContext") {
       const request = getSelectedRequest(sdk);
       if (request) {
         const parsedRequest = parseRequest(request.raw);
-        await handleSingleRequest(
-          {
-            raw: request.raw,
-            isTls: request.isTLS,
-            host: request.host,
-            port: request.port,
-            path: parsedRequest.path,
-            query: parsedRequest.query,
-          },
-          attackType,
-        );
+        const requestData = {
+          raw: request.raw,
+          isTls: request.isTLS,
+          host: request.host,
+          port: request.port,
+          path: parsedRequest.path,
+          query: parsedRequest.query,
+        };
+
+        if (attackType === "targeted") {
+          if (!await validateJSONBody(parsedRequest)) {
+            sdk.window.showToast("Targeted scan requires valid JSON request body", {
+              variant: "error"
+            });
+            return;
+          }
+          await showTargetedDialog(requestData, attackType);
+          return;
+        }
+
+        await handleSingleRequest(requestData, { attackType });
       }
     }
   }
@@ -245,12 +318,12 @@ function setupCommands(sdk: FrontendSDK) {
         {
           x: mouseX,
           y: mouseY,
-          attackTypes: ["query", "body", "headers"],
+          attackTypes: ["query", "body", "headers", "targeted"],
         },
         {
           onSelect,
           onClose,
-        },
+        }
       );
 
       quickMenu.open();
@@ -276,7 +349,7 @@ function setupNavigation(sdk: FrontendSDK, rootElement: HTMLDivElement) {
     "/paramfinder",
     {
       icon: "fas fa-search",
-    },
+    }
   );
 
   setCount = setSidebarCount;

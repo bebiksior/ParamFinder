@@ -81,18 +81,18 @@ export class ParamMiner {
     if (this.config.autoDetectMaxSize) {
       this.eventEmitter.emit(
         "logs",
-        `Auto-detecting max ${this.config.attackType} size...`
+        `Auto-detecting max request size for attack type ${this.config.attackType.toUpperCase()}...`
       );
       this.maxSize = await guessMaxSize(this);
       if (!(await this.stateManager.continueOrWait())) return;
     } else {
-      if (this.config.attackType === "query") {
-        this.maxSize = this.config.maxQuerySize;
-      } else if (this.config.attackType === "headers") {
-        this.maxSize = this.config.maxHeaderSize;
-      } else if (this.config.attackType === "body") {
-        this.maxSize = this.config.maxBodySize;
-      }
+      const sizeMap = {
+        query: this.config.maxQuerySize,
+        headers: this.config.maxHeaderSize,
+        body: this.config.maxBodySize,
+        targeted: this.config.maxBodySize
+      };
+      this.maxSize = sizeMap[this.config.attackType];
     }
 
     if (this.maxSize) {

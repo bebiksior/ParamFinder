@@ -95,11 +95,13 @@ export function createQuickMenu(options: QuickMenuOptions, callbacks: QuickMenuC
       });
 
       const icon = document.createElement("i");
-      icon.className = attackType === "query"
-        ? "fas fa-search"
-        : attackType === "body"
-        ? "fas fa-file-alt"
-        : "fas fa-list";
+      const iconMap = {
+        query: "fas fa-search",
+        body: "fas fa-file-alt",
+        targeted: "fas fa-target",
+        headers: "fas fa-list"
+      };
+      icon.className = iconMap[attackType];
 
       Object.assign(icon.style, {
         marginRight: "6px",
