@@ -32,7 +32,7 @@ export class CustomDialog {
 
   private createDialog(): void {
     this.element = document.createElement("div");
-    this.element.className = "popup";
+    this.element.className = "paramfinder-dialog";
     this.element.innerHTML = `
         <div class="popup-header">
           <div class="popup-title">${this.options.title}</div>
