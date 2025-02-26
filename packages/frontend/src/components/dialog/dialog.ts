@@ -526,7 +526,6 @@ export class AdvancedScanDialog {
       }, 200);
     }
   }
-
   private createJsonTree(): void {
     const content = this.jsonPathSelectorContainer.querySelector(".json-path-selector-content");
     if (!content) return;
@@ -585,7 +584,8 @@ export class AdvancedScanDialog {
 
         const keyTextElement = document.createElement("span");
         keyTextElement.className = "json-tree-key-text";
-        keyTextElement.textContent = `${key}${isArray ? '' : ':'}`;
+        const keyText = document.createTextNode(`${key}${isArray ? '' : ':'}`);
+        keyTextElement.appendChild(keyText);
         keyElement.appendChild(keyTextElement);
 
         if (isExpandable) {
@@ -627,18 +627,22 @@ export class AdvancedScanDialog {
           const valueElement = document.createElement("div");
           valueElement.className = "json-tree-value";
 
-          let valueContent = "";
+          const valueSpan = document.createElement("span");
           if (typeof value === "string") {
-            valueContent = `<span class="json-tree-string">"${value}"</span>`;
+            valueSpan.className = "json-tree-string";
+            valueSpan.textContent = `"${value}"`;
           } else if (typeof value === "number") {
-            valueContent = `<span class="json-tree-number">${value}</span>`;
+            valueSpan.className = "json-tree-number";
+            valueSpan.textContent = String(value);
           } else if (typeof value === "boolean") {
-            valueContent = `<span class="json-tree-boolean">${value}</span>`;
+            valueSpan.className = "json-tree-boolean";
+            valueSpan.textContent = String(value);
           } else if (value === null) {
-            valueContent = `<span class="json-tree-null">null</span>`;
+            valueSpan.className = "json-tree-null";
+            valueSpan.textContent = "null";
           }
 
-          valueElement.innerHTML = valueContent;
+          valueElement.appendChild(valueSpan);
           rowContent.appendChild(valueElement);
         } else {
           const childContainer = this.buildJsonTree(value, currentPath, level + 1);
