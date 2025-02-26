@@ -92,9 +92,6 @@ class WordlistManager {
     if (currentVersion < CURRENT_SCHEMA_VERSION) {
       this.sdk.console.log(`[DATABASE] Running migrations from version ${currentVersion} to ${CURRENT_SCHEMA_VERSION}`);
 
-      // we need to clear table because plugin IDs between updates are not the same and paths will not be valid
-      await this.database.exec("DELETE FROM wordlists");
-
       if (currentVersion < 2) {
         await this.migrateToV2();
       }
