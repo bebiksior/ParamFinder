@@ -3,11 +3,11 @@ import { Request, Parameter, RequestContext } from "shared";
 import { ParamMiner } from "./param-miner";
 import { generateID } from "../util/helper";
 import { autopilotCheckResponse } from "./features/autopilot";
-import { JSONPath } from 'jsonpath-plus';
+import { JSONPath } from "jsonpath-plus";
 
 export class Requester {
   private paramMiner: ParamMiner;
-  public bodyType: "json" | "query" | "multipart" | null = null;
+  public bodyType: "json" | "query" | "multipart" | "xml" | null = null;
   public multipartBoundary: string | null = null;
 
   constructor(paramMiner: ParamMiner) {
@@ -29,10 +29,23 @@ export class Requester {
     return queryRegex.test(body);
   }
 
+  private isXMLBody(body: string): boolean {
+    try {
+      // Check for XML declaration or root element
+      const trimmedBody = body.trim();
+      return (
+        (trimmedBody.startsWith("<?xml") || trimmedBody.match(/^<[^?!]/) !== null) &&
+        trimmedBody.includes(">")
+      );
+    } catch {
+      return false;
+    }
+  }
+
   public async sendRequestWithParams(
     request: Request,
     parameters: Parameter[],
-    context?: RequestContext,
+    context?: RequestContext
   ) {
     const attackType = this.paramMiner.config.attackType;
 
@@ -45,7 +58,11 @@ export class Requester {
 
     this.paramMiner.eventEmitter.emit(
       "debug",
-      `[requester.ts] Sending request with ${parameters.length} parameters... (requestCopy has ${Object.keys(requestCopy).length} parameters)`,
+      `[requester.ts] Sending request with ${
+        parameters.length
+      } parameters... (requestCopy has ${
+        Object.keys(requestCopy).length
+      } parameters)`
     );
 
     switch (attackType) {
@@ -57,7 +74,6 @@ export class Requester {
         this.handleHeaderParameters(requestCopy, parameters);
         break;
 
-      case "targeted":
       case "body":
         this.handleBodyParameters(requestCopy, parameters);
         break;
@@ -74,7 +90,7 @@ export class Requester {
     if (this.paramMiner.config.autopilotEnabled && context === "discovery") {
       const hasTakenAction = await autopilotCheckResponse(
         this.paramMiner,
-        requestResponse,
+        requestResponse
       );
       if (hasTakenAction) {
         this.paramMiner.sdk.console.log("Autopilot has taken action.");
@@ -87,7 +103,7 @@ export class Requester {
   private handleQueryParameters(request: Request, parameters: Parameter[]) {
     const queryParams = parameters
       .map(
-        (p) => `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`,
+        (p) => `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`
       )
       .join("&");
     request.query = request.query
@@ -135,10 +151,9 @@ export class Requester {
     try {
       const bodyObj = originalBody ? JSON.parse(originalBody) : {};
 
-      if (request.bodyJSONPath) {
-        const jsonPath = request.bodyJSONPath.startsWith("$")
-          ? request.bodyJSONPath
-          : `$.${request.bodyJSONPath}`;
+      let jsonPath = this.paramMiner.config.jsonBodyPath;
+      if (jsonPath) {
+        jsonPath = jsonPath.startsWith("$") ? jsonPath : `$.${jsonPath}`;
 
         const paramsToInject = parameters.reduce(
           (acc, param) => ({
@@ -174,12 +189,12 @@ export class Requester {
   private handleQueryBody(
     request: Request,
     parameters: Parameter[],
-    originalBody: string,
+    originalBody: string
   ) {
     const existingParams = originalBody ? originalBody + "&" : "";
     const newParams = parameters
       .map(
-        (p) => `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`,
+        (p) => `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`
       )
       .join("&");
     request.body = existingParams + newParams;
@@ -189,7 +204,7 @@ export class Requester {
   private handleMultipartBody(
     request: Request,
     parameters: Parameter[],
-    originalBody: string,
+    originalBody: string
   ) {
     const originalContentType = request.headers["Content-Type"]?.[0];
     if (!originalContentType) throw new Error("Missing Content-Type header");
@@ -227,6 +242,8 @@ export class Requester {
         this.bodyType = "query";
       } else if (contentType.includes("multipart/form-data")) {
         this.bodyType = "multipart";
+      } else if (contentType.includes("application/xml") || contentType.includes("text/xml")) {
+        this.bodyType = "xml";
       }
     }
 
@@ -235,6 +252,8 @@ export class Requester {
         this.bodyType = "json";
       } else if (this.isQueryBody(body)) {
         this.bodyType = "query";
+      } else if (this.isXMLBody(body)) {
+        this.bodyType = "xml";
       } else {
         throw new Error("Unsupported body type detected.");
       }
@@ -243,7 +262,7 @@ export class Requester {
     this.paramMiner.sdk.api.send(
       "paramfinder:log",
       this.paramMiner.id,
-      `Determined body format: ${this.bodyType}`,
+      `Determined body format: ${this.bodyType}`
     );
   }
 
