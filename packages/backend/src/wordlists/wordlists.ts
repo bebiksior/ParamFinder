@@ -18,6 +18,7 @@ class WordlistManager {
 
   private async init(): Promise<boolean> {
     this.database = await this.sdk.meta.db();
+
     return await this.setupDatabase();
   }
 
