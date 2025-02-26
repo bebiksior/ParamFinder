@@ -98,7 +98,6 @@ export function createQuickMenu(options: QuickMenuOptions, callbacks: QuickMenuC
       const iconMap = {
         query: "fas fa-search",
         body: "fas fa-file-alt",
-        targeted: "fas fa-target",
         headers: "fas fa-list"
       };
       icon.className = iconMap[attackType];

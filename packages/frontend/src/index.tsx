@@ -7,7 +7,9 @@ import {
   generateID,
   getSelectedRequest,
   handleBackendCall,
+  ParsedRequest,
   parseRequest,
+  printDebugData,
 } from "./utils/utils";
 import { Caido } from "@caido/sdk-frontend";
 import { API, BackendEvents } from "backend";
@@ -15,8 +17,7 @@ import { CommandContext } from "@caido/sdk-frontend/src/types";
 import { AttackType, Request, Settings } from "shared";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createQuickMenu } from "./quickmenu/quickmenu";
-import { CustomDialog } from "@/components/dialog/dialog";
-import { JSONPath } from "jsonpath-plus";
+import { AdvancedScanDialog, DialogResult } from "@/components/dialog/dialog";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,7 +55,7 @@ function setupUI(sdk: FrontendSDK) {
  */
 let sidebarCount = 0;
 function setupCommands(sdk: FrontendSDK) {
-  const attackTypes = ["query", "body", "headers", "targeted"] as AttackType[];
+  const attackTypes = ["query", "body", "headers"] as AttackType[];
 
   let currentPath = window.location.hash;
   const observer = new MutationObserver(() => {
@@ -73,10 +74,11 @@ function setupCommands(sdk: FrontendSDK) {
     subtree: true,
   });
 
-  async function handleMining(
+  async function startMining(
     request: Request,
     settings: Settings,
-    attackType: AttackType
+    attackType: AttackType,
+    dialogOptions: DialogResult
   ) {
     const result = await handleBackendCall(
       sdk.backend.startMining(request, {
@@ -96,6 +98,8 @@ function setupCommands(sdk: FrontendSDK) {
         updateContentLength: settings.updateContentLength,
         autopilotEnabled: settings.autopilotEnabled,
         ignoreAnomalyTypes: settings.ignoreAnomalyTypes,
+        customValue: dialogOptions.customValue,
+        jsonBodyPath: dialogOptions.jsonBodyPath,
       }),
       sdk
     );
@@ -113,15 +117,17 @@ function setupCommands(sdk: FrontendSDK) {
 
   async function handleRequestRowContext(
     requests: any[],
-    attackType: AttackType
+    attackType: AttackType,
+    options: DialogResult
   ) {
     for (const req of requests) {
       const request = await handleBackendCall(
         sdk.backend.getRequest(req.id),
         sdk
       );
+
       const settings = await handleBackendCall(sdk.backend.getSettings(), sdk);
-      await handleMining(request, settings, attackType);
+      await startMining(request, settings, attackType, options);
     }
   }
 
@@ -136,7 +142,8 @@ function setupCommands(sdk: FrontendSDK) {
     },
     options: {
       attackType: AttackType;
-      bodyJSONPath?: string;
+      jsonBodyPath?: string;
+      customValue?: string;
     }
   ) {
     const settings = await handleBackendCall(sdk.backend.getSettings(), sdk);
@@ -155,112 +162,56 @@ function setupCommands(sdk: FrontendSDK) {
       port: request.port,
       tls: request.isTls,
       context: "discovery",
-      raw: request.raw,
-      bodyJSONPath: options.bodyJSONPath,
+      raw: request.raw
     };
 
-    await handleMining(_request, settings, options.attackType);
+    await startMining(_request, settings, options.attackType, options);
   }
 
   async function handleCommandRun(
     context: CommandContext,
-    attackType: AttackType
+    attackType: AttackType,
+    options: DialogResult
   ) {
-    if (context.type === "RequestRowContext") {
-      if (attackType === "targeted") {
-        sdk.window.showToast(
-          "Targeted attack type is not supported for multiple requests. Select a single request instead.",
-          {
+    switch (context.type) {
+      // f.e. HTTP History table rows
+      case "RequestRowContext":
+        const requests = context.requests.slice(0, 25);
+        await handleRequestRowContext(requests, attackType, options);
+        break;
+
+      // Request Editors right-click menu
+      case "RequestContext":
+        await handleSingleRequest(context.request, { attackType, ...options });
+        break;
+
+      // f.e. command palette, it doesn't give us a request object, so we need somehow to obtain it
+      case "BaseContext":
+        const request = getSelectedRequest(sdk);
+        if (request) {
+          const parsedRequest = parseRequest(request.raw);
+          const requestData = {
+            raw: request.raw,
+            isTls: request.isTLS,
+            host: request.host,
+            port: request.port,
+            path: parsedRequest.path,
+            query: parsedRequest.query,
+          };
+
+          await handleSingleRequest(requestData, { attackType, ...options });
+        } else {
+          sdk.window.showToast("No request editor is open.", {
             variant: "error",
-          }
-        );
-        return;
-      }
-
-      const requests = context.requests.slice(0, 25);
-      await handleRequestRowContext(requests, attackType);
-    }
-
-    async function validateJSONBody(parsedRequest: any): Promise<boolean> {
-      try {
-        if (!parsedRequest.body) return false;
-        JSON.parse(parsedRequest.body);
-        return true;
-      } catch (e) {
-        return false;
-      }
-    }
-
-    async function showTargetedDialog(requestData: any, attackType: AttackType) {
-      new CustomDialog({
-        initialValue: "$",
-        title: "Enter JSON path to run targeted scan",
-        onValidate: (value) => {
-          const parsedRequest = parseRequest(requestData.raw);
-
-          const target = JSONPath({
-            path: value,
-            json: JSON.parse(parsedRequest.body),
-            wrap: false,
           });
-
-          return target !== undefined;
-        },
-        onSubmit: async (value) => {
-          await handleSingleRequest(requestData, {
-            attackType,
-            bodyJSONPath: value,
-          });
-        },
-      }).show();
-    }
-
-    if (context.type === "RequestContext") {
-      const parsedReq = parseRequest(context.request.raw);
-
-      if (attackType === "targeted") {
-        if (!await validateJSONBody(parsedReq)) {
-          sdk.window.showToast("Targeted scan requires valid JSON request body", {
-            variant: "error"
-          });
-          return;
+          console.log("No request editor is open.");
+          printDebugData();
         }
-        await showTargetedDialog(context.request, attackType);
-        return;
-      }
-
-      await handleSingleRequest(context.request, { attackType });
-    }
-
-    if (context.type === "BaseContext") {
-      const request = getSelectedRequest(sdk);
-      if (request) {
-        const parsedRequest = parseRequest(request.raw);
-        const requestData = {
-          raw: request.raw,
-          isTls: request.isTLS,
-          host: request.host,
-          port: request.port,
-          path: parsedRequest.path,
-          query: parsedRequest.query,
-        };
-
-        if (attackType === "targeted") {
-          if (!await validateJSONBody(parsedRequest)) {
-            sdk.window.showToast("Targeted scan requires valid JSON request body", {
-              variant: "error"
-            });
-            return;
-          }
-          await showTargetedDialog(requestData, attackType);
-          return;
-        }
-
-        await handleSingleRequest(requestData, { attackType });
-      }
+        break;
     }
   }
 
+  // Register commands for each attack type
   attackTypes.forEach((attackType) => {
     const commandId = `paramfinder:start-${attackType}`;
     const displayName = `Param Finder [${attackType.toUpperCase()}]`;
@@ -269,7 +220,7 @@ function setupCommands(sdk: FrontendSDK) {
       name: displayName,
       group: "Param Finder",
       run: async (context: CommandContext) => {
-        await handleCommandRun(context, attackType);
+        await handleCommandRun(context, attackType, {});
       },
     });
 
@@ -288,6 +239,53 @@ function setupCommands(sdk: FrontendSDK) {
     sdk.commandPalette.register(commandId);
   });
 
+  // Register commands for the advanced scan
+  sdk.commands.register("paramfinder:advanced-scan", {
+    name: "Param Finder [ADVANCED]",
+    group: "Param Finder",
+    run: async (context: CommandContext) => {
+      let parsedRequest: ParsedRequest | null = null;
+      if (context.type === "RequestContext") {
+        parsedRequest = parseRequest(context.request.raw);
+      } else if (context.type === "BaseContext") {
+        parsedRequest = parseRequest(getSelectedRequest(sdk)?.raw);
+      }
+
+      const dialog = new AdvancedScanDialog({
+        onSubmit: (data: DialogResult) => {
+          handleCommandRun(context, data.attackType, {
+            customValue: data.customValue,
+            jsonBodyPath: data.jsonBodyPath,
+          });
+        },
+        jsonBody: parsedRequest?.body,
+      });
+      dialog.show();
+    },
+  });
+
+  sdk.menu.registerItem({
+    type: "Request",
+    commandId: "paramfinder:advanced-scan",
+    leadingIcon: "fas fa-search",
+  });
+
+  sdk.commandPalette.register("paramfinder:advanced-scan");
+
+  setupQuickMenu(sdk, handleCommandRun);
+}
+
+const setupQuickMenu = (
+  sdk: FrontendSDK,
+  handleCommandRun: (
+    context: CommandContext,
+    attackType: AttackType,
+    options: {
+      customValue?: string;
+      jsonBodyPath?: string;
+    }
+  ) => void
+) => {
   let mouseX = 0;
   let mouseY = 0;
 
@@ -307,7 +305,7 @@ function setupCommands(sdk: FrontendSDK) {
       }
 
       const onSelect = (attackType: AttackType) => {
-        handleCommandRun(context, attackType);
+        handleCommandRun(context, attackType, {});
       };
 
       const onClose = () => {
@@ -318,7 +316,7 @@ function setupCommands(sdk: FrontendSDK) {
         {
           x: mouseX,
           y: mouseY,
-          attackTypes: ["query", "body", "headers", "targeted"],
+          attackTypes: ["query", "body", "headers"],
         },
         {
           onSelect,
@@ -334,7 +332,7 @@ function setupCommands(sdk: FrontendSDK) {
   sdk.shortcuts.register("paramfinder:quick-menu", [
     "ctrl+shift+e, command+shift+e",
   ]);
-}
+};
 
 /**
  * Configures navigation and sidebar

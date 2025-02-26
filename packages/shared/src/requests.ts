@@ -12,9 +12,6 @@ export interface Request {
   tls: boolean;
   context: RequestContext;
   raw: string;
-
-  // For targeted attack type
-  bodyJSONPath?: string;
 }
 
 export type RequestContext =

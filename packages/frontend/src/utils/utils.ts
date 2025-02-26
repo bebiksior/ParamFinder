@@ -1,5 +1,5 @@
 import { FrontendSDK } from "@/types";
-import { Request, Result } from "shared";
+import { Result } from "shared";
 
 export async function handleBackendCall<T>(
   promise: Promise<Result<T>>,
@@ -22,14 +22,16 @@ export const uint8ArrayToString = (uint8Array: Uint8Array | undefined) => {
   return new TextDecoder().decode(uint8Array);
 };
 
-/* Request parser */
-export function parseRequest(raw: string): {
+export type ParsedRequest = {
   path: string;
   query: string;
   method: string;
   headers: Record<string, Array<string>>;
   body: string;
-} {
+};
+
+/* Request parser */
+export function parseRequest(raw: string): ParsedRequest {
   if (!raw.trim()) {
     return {
       path: "",
@@ -122,7 +124,7 @@ export function getSelectedRequest(sdk: FrontendSDK) {
 
     return {
       isTLS: isSecure,
-      port: portNumber
+      port: portNumber,
     };
   }
 
@@ -138,7 +140,9 @@ export function getSelectedRequest(sdk: FrontendSDK) {
         "[data-language='http-request']"
       ) as HTMLElement;
       let historyUrl: string;
-      const historyUrlElement = document.querySelector(".c-request-header__label");
+      const historyUrlElement = document.querySelector(
+        ".c-request-header__label"
+      );
       const automateUrlElement = document.querySelector(
         ".c-automate-session-toolbar__connection-info input"
       ) as HTMLInputElement;
@@ -187,25 +191,41 @@ export function getSelectedRequest(sdk: FrontendSDK) {
 }
 
 export function formatTimeout(milliseconds: number): string {
-    if (milliseconds < 1000) {
-      return `${milliseconds} milliseconds`;
-    }
-
-    const minutes = Math.floor(milliseconds / 60000);
-    const seconds = Math.floor((milliseconds % 60000) / 1000);
-    const remainingMilliseconds = milliseconds % 1000;
-
-    const parts: string[] = [];
-
-    if (minutes > 0) {
-      parts.push(`${minutes} minute${minutes > 1 ? "s" : ""}`);
-    }
-    if (seconds > 0) {
-      parts.push(`${seconds} second${seconds > 1 ? "s" : ""}`);
-    }
-    if (remainingMilliseconds > 0) {
-      parts.push(`${remainingMilliseconds} milliseconds`);
-    }
-
-    return parts.join(" and ");
+  if (milliseconds < 1000) {
+    return `${milliseconds} milliseconds`;
   }
+
+  const minutes = Math.floor(milliseconds / 60000);
+  const seconds = Math.floor((milliseconds % 60000) / 1000);
+  const remainingMilliseconds = milliseconds % 1000;
+
+  const parts: string[] = [];
+
+  if (minutes > 0) {
+    parts.push(`${minutes} minute${minutes > 1 ? "s" : ""}`);
+  }
+  if (seconds > 0) {
+    parts.push(`${seconds} second${seconds > 1 ? "s" : ""}`);
+  }
+  if (remainingMilliseconds > 0) {
+    parts.push(`${remainingMilliseconds} milliseconds`);
+  }
+
+  return parts.join(" and ");
+}
+
+export function validateJSONBody(parsedRequest: any): boolean {
+  try {
+    if (!parsedRequest.body) return false;
+    JSON.parse(parsedRequest.body);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+export function printDebugData() {
+  console.log("Debug Information:");
+  console.log(`Current location hash: ${location.hash}`);
+  console.log(`Current URL: ${window.location.href}`);
+}

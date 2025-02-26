@@ -38,16 +38,6 @@ export const sizeConfigs: Record<string, SizeConfig> = {
       },
     ],
   },
-  targeted: {
-    sizes: [50000, 30000, 16000, 8000, 4000, 2000],
-    defaultSize: 2000,
-    generateParams: (size) => [
-      {
-        name: "paramFinderTest",
-        value: randomString(size),
-      },
-    ],
-  },
   multipart: {
     sizes: [50000, 30000, 16000, 8000, 4000],
     defaultSize: 4000,

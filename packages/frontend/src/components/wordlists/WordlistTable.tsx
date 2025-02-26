@@ -65,7 +65,7 @@ export const WordlistTable = memo(function WordlistTable({
                   </TableCell>
                   <TableCell className="select-text">{wordlist.path}</TableCell>
                   <TableCell>
-                    {["body", "headers", "query", "targeted"].map((attackType) => {
+                    {["body", "headers", "query"].map((attackType) => {
                       const isSelected = wordlist.attackTypes.includes(attackType as AttackType);
                       const handleClick = () => {
                         const newAttackTypes = isSelected

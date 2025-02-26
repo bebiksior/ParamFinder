@@ -41,7 +41,7 @@ class WordlistManager {
     return true;
   }
 
-  async addWordlistPath(path: string, enabled: boolean = true, attackTypes: AttackType[] = ["body", "headers", "query", "targeted"]): Promise<void> {
+  async addWordlistPath(path: string, enabled: boolean = true, attackTypes: AttackType[] = ["body", "headers", "query"]): Promise<void> {
     if (!this.database) throw new Error("Database not initialized");
 
     const startTime = Date.now();

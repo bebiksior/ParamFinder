@@ -375,7 +375,6 @@ export class ParamDiscovery {
         return this.getNextHeaderChunk(wordlist, maxSize);
       case "query":
         return this.getNextQueryChunk(wordlist, maxSize);
-      case "targeted":
       case "body":
         return this.getNextBodyChunk(wordlist, maxSize);
       default:
@@ -396,7 +395,7 @@ export class ParamDiscovery {
       .slice(this.lastWordlistIndex, this.lastWordlistIndex + chunkSize)
       .map((word) => ({
         name: word,
-        value: this.randomParameterValue(),
+        value: this.obtainParameterValue(),
       }));
 
     this.lastWordlistIndex += chunkSize;
@@ -418,14 +417,14 @@ export class ParamDiscovery {
       }
 
       const encodedWord = encodeURIComponent(word);
-      const encodedValue = encodeURIComponent(this.randomParameterValue());
+      const encodedValue = encodeURIComponent(this.obtainParameterValue());
       const paramSize = 2 + encodedWord.length + encodedValue.length;
 
       if (maxSize && currentSize + paramSize > maxSize) {
         break;
       }
 
-      parameterChunk.push({ name: word, value: this.randomParameterValue() });
+      parameterChunk.push({ name: word, value: this.obtainParameterValue() });
       currentSize += paramSize;
       this.lastWordlistIndex++;
     }
@@ -448,7 +447,7 @@ export class ParamDiscovery {
       }
 
       const encodedWord = encodeURIComponent(word);
-      const encodedValue = encodeURIComponent(this.randomParameterValue());
+      const encodedValue = encodeURIComponent(this.obtainParameterValue());
 
       let paramSize = 6 + encodedWord.length + encodedValue.length;
 
@@ -463,7 +462,7 @@ export class ParamDiscovery {
         break;
       }
 
-      parameterChunk.push({ name: word, value: this.randomParameterValue() });
+      parameterChunk.push({ name: word, value: this.obtainParameterValue() });
       currentSize += paramSize;
       this.lastWordlistIndex++;
     }
@@ -471,7 +470,11 @@ export class ParamDiscovery {
     return parameterChunk;
   }
 
-  private randomParameterValue(): string {
+  private obtainParameterValue(): string {
+    if (this.paramMiner.config.customValue) {
+      return this.paramMiner.config.customValue + randomString(ParamDiscovery.PARAMS_VALUES_SIZE);
+    }
+
     return randomString(ParamDiscovery.PARAMS_VALUES_SIZE);
   }
 

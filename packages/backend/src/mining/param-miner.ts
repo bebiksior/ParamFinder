@@ -89,8 +89,7 @@ export class ParamMiner {
       const sizeMap = {
         query: this.config.maxQuerySize,
         headers: this.config.maxHeaderSize,
-        body: this.config.maxBodySize,
-        targeted: this.config.maxBodySize
+        body: this.config.maxBodySize
       };
       this.maxSize = sizeMap[this.config.attackType];
     }
