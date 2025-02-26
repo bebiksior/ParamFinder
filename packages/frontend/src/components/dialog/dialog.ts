@@ -536,7 +536,11 @@ export class AdvancedScanDialog {
       content.innerHTML = '';
       content.appendChild(jsonTree);
     } catch (error) {
-      content.innerHTML = `<div class="json-tree-error">Error parsing JSON: ${(error as Error).message}</div>`;
+      const errorElement = document.createElement("div");
+      errorElement.className = "json-tree-error";
+      errorElement.textContent = `Error parsing JSON: ${(error as Error).message}`;
+      content.textContent = '';
+      content.appendChild(errorElement);
     }
   }
 
