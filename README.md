@@ -34,6 +34,7 @@ Open Caido's command palette and type 'Param Finder' to see available commands:
 - **Param Finder [QUERY]** - Discover parameters in URL query string
 - **Param Finder [BODY]** - Find parameters in request body
 - **Param Finder [HEADERS]** - Search for header parameters
+- **Param Finder [ADVANCED]** - Open advanced scan dialog with custom options for parameter discovery
 
 ![Command palette usage demonstration](https://raw.githubusercontent.com/bebiksior/ParamFinder/refs/heads/main/assets/CommandPalette.gif)
 
