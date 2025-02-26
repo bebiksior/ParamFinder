@@ -79,6 +79,11 @@ export type BackendEvents = DefineEvents<{
    * @param newAmount - new totalParametersAmount value
    */
   "paramfinder:adjust": (miningID: string, newAmount: number) => void;
+
+  /**
+   * Notifies client about an update available
+   */
+  "paramfinder:update_available": () => void;
 }>;
 
 export type BackendSDK = SDK<never, BackendEvents>;

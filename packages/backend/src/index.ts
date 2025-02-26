@@ -25,6 +25,7 @@ import {
   uploadWordlistChunk,
 } from "./api/uploader";
 import { getRequest } from "./api/requests";
+import { BackendEvents } from "./types/types";
 
 export type { BackendEvents } from "./types/types";
 
@@ -60,7 +61,7 @@ export type API = DefineAPI<{
   getSettingsPath: typeof getSettingsPath;
 }>;
 
-export function init(sdk: SDK<API>) {
+export function init(sdk: SDK<API, BackendEvents>) {
   initWordlistManager(sdk);
   initSettingsStore(sdk);
 
@@ -91,4 +92,12 @@ export function init(sdk: SDK<API>) {
   sdk.api.register("getSettings", getSettings);
   sdk.api.register("updateSettings", updateSettings);
   sdk.api.register("getSettingsPath", getSettingsPath);
+
+  setTimeout(() => {
+    sdk.meta.updateAvailable().then((isAvailable) => {
+      if (isAvailable) {
+        sdk.api.send("paramfinder:update_available");
+      }
+    }).catch(() => {});
+  }, 2000);
 }

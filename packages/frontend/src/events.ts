@@ -20,23 +20,12 @@ export function setupEvents(sdk: FrontendSDK) {
       totalParametersAmount: number,
       totalLearnRequests: number
     ) => {
-      //   console.log(
-      //     "paramfinder:new",
-      //     miningID,
-      //     totalParametersAmount,
-      //     totalLearnRequests,
-      //   );
       newSession(miningID, totalParametersAmount, totalLearnRequests);
       addLog(miningID, `Starting mining session ${miningID}`);
     }
   );
 
-  sdk.backend.onEvent("paramfinder:complete", (miningID: string) => {
-    // console.log("paramfinder:complete", miningID);
-  });
-
   sdk.backend.onEvent("paramfinder:log", (miningID: string, log: string) => {
-    // console.log("paramfinder:log", miningID, log);
     addLog(miningID, log);
   });
 
@@ -47,7 +36,6 @@ export function setupEvents(sdk: FrontendSDK) {
       state: MiningSessionState,
       phase?: MiningSessionPhase
     ) => {
-      //   console.log("paramfinder:state", miningID, state, phase);
       updateSessionState(miningID, state, phase);
       addLog(
         miningID,
@@ -66,14 +54,6 @@ export function setupEvents(sdk: FrontendSDK) {
       context: RequestContext,
       requestResponse?: RequestResponse
     ) => {
-      //   console.log(
-      //     "paramfinder:response_received",
-      //     miningID,
-      //     parametersSent,
-      //     context,
-      //     requestResponse == null ? "null" : "not null",
-      //   );
-
       addRequestResponse(miningID, parametersSent, context, requestResponse);
     }
   );
@@ -81,7 +61,6 @@ export function setupEvents(sdk: FrontendSDK) {
   sdk.backend.onEvent(
     "paramfinder:new_finding",
     (miningID: string, finding: Finding) => {
-      //   console.log("paramfinder:new_finding", miningID, finding);
       addFinding(miningID, finding);
       addLog(miningID, `New parameter discovered: ${finding.parameter.name}`);
     }
@@ -90,7 +69,6 @@ export function setupEvents(sdk: FrontendSDK) {
   sdk.backend.onEvent(
     "paramfinder:error",
     (miningID: string, error: string) => {
-      //   console.log("paramfinder:error", miningID, error);
       updateSessionState(
         miningID,
         MiningSessionState.Error,
@@ -106,8 +84,14 @@ export function setupEvents(sdk: FrontendSDK) {
   sdk.backend.onEvent(
     "paramfinder:adjust",
     (miningID: string, newAmount: number) => {
-      //   console.log("paramfinder:adjust", miningID, newAmount);
       updateTotalParametersAmount(miningID, newAmount);
     }
   );
+
+  sdk.backend.onEvent("paramfinder:update_available", () => {
+    sdk.window.showToast(
+      "You are using an outdated version of ParamFinder. Please update to the latest version on the Plugins page.",
+      { variant: "info" }
+    );
+  });
 }
