@@ -4,7 +4,6 @@ import { Database } from "sqlite";
 import { deleteFile } from "../util/helper";
 import { BackendSDK } from "../types/types";
 
-// Define the current schema version
 const CURRENT_SCHEMA_VERSION = 2;
 
 class WordlistManager {
@@ -25,13 +24,11 @@ class WordlistManager {
   private async setupDatabase(): Promise<boolean> {
     if (!this.database) return false;
 
-    // Check if the schema_version table exists
     const versionTableExistsStatement = await this.database.prepare(
       "SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'"
     );
     const versionTableExists = await versionTableExistsStatement.get();
 
-    // Create schema_version table if it doesn't exist
     if (!versionTableExists) {
       await this.database.exec(`
         CREATE TABLE schema_version (
@@ -39,20 +36,18 @@ class WordlistManager {
           updated_at TEXT
         )
       `);
-      // Insert initial version (1 for pre-migration state)
+
       await this.database.exec(`
         INSERT INTO schema_version (version, updated_at)
         VALUES (1, datetime('now'))
       `);
     }
 
-    // Check if the wordlists table exists
     const tableExistsStatement = await this.database.prepare(
       "SELECT name FROM sqlite_master WHERE type='table' AND name='wordlists'"
     );
     const tableExists = await tableExistsStatement.get();
 
-    // Create wordlists table if it doesn't exist
     if (!tableExists) {
       await this.database.exec(`
         CREATE TABLE wordlists (
@@ -62,12 +57,10 @@ class WordlistManager {
         )
       `);
 
-      // Set schema version to current if creating a new table
       await this.updateSchemaVersion(CURRENT_SCHEMA_VERSION);
       return true;
     }
 
-    // Run migrations if needed
     await this.runMigrations();
     return false;
   }
@@ -99,7 +92,9 @@ class WordlistManager {
     if (currentVersion < CURRENT_SCHEMA_VERSION) {
       this.sdk.console.log(`[DATABASE] Running migrations from version ${currentVersion} to ${CURRENT_SCHEMA_VERSION}`);
 
-      // Migration from version 1 to 2: Add attack_types column
+      // we need to clear table because plugin IDs between updates are not the same and paths will not be valid
+      await this.database.exec("DELETE FROM wordlists");
+
       if (currentVersion < 2) {
         await this.migrateToV2();
       }
