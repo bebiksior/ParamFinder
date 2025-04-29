@@ -23,7 +23,7 @@ class SettingsStore {
       autopilotEnabled: true,
       updateContentLength: true,
       ignoreAnomalyTypes: [],
-      addCacheBusterParameter: false,
+      addCacheBusterParameter: true,
     };
     this.sdk = sdk;
 
