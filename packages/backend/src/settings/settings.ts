@@ -1,7 +1,7 @@
 import { SDK } from "caido:plugin";
-import { Settings } from "shared";
-import * as path from "path";
 import { readFile, writeFile } from "fs/promises";
+import * as path from "path";
+import { Settings } from "shared";
 
 class SettingsStore {
   private static instance: SettingsStore;
@@ -23,6 +23,7 @@ class SettingsStore {
       autopilotEnabled: true,
       updateContentLength: true,
       ignoreAnomalyTypes: [],
+      addCacheBusterParameter: false,
     };
     this.sdk = sdk;
 

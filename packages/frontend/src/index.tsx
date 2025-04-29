@@ -1,8 +1,15 @@
+import { AdvancedScanDialog, DialogResult } from "@/components/dialog/dialog";
+import { Caido } from "@caido/sdk-frontend";
+import { CommandContext } from "@caido/sdk-frontend/src/types";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { API, BackendEvents } from "backend";
 import { createRoot } from "react-dom/client";
-import { FrontendSDK } from "./types";
+import { AttackType, Request, Settings } from "shared";
 import App from "./App";
-import { setSDK } from "./stores/sdkStore";
 import { setupEvents } from "./events";
+import { createQuickMenu } from "./quickmenu/quickmenu";
+import { setSDK } from "./stores/sdkStore";
+import { FrontendSDK } from "./types";
 import {
   generateID,
   getSelectedRequest,
@@ -11,13 +18,6 @@ import {
   parseRequest,
   printDebugData,
 } from "./utils/utils";
-import { Caido } from "@caido/sdk-frontend";
-import { API, BackendEvents } from "backend";
-import { CommandContext } from "@caido/sdk-frontend/src/types";
-import { AttackType, Request, Settings } from "shared";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createQuickMenu } from "./quickmenu/quickmenu";
-import { AdvancedScanDialog, DialogResult } from "@/components/dialog/dialog";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -89,6 +89,7 @@ function setupCommands(sdk: FrontendSDK) {
         delayBetweenRequests: settings.delay,
         concurrency: settings.concurrency,
         performanceMode: settings.performanceMode,
+        addCacheBusterParameter: settings.addCacheBusterParameter,
         maxQuerySize: settings.maxQuerySize,
         maxHeaderSize: settings.maxHeaderSize,
         maxBodySize: settings.maxBodySize,
@@ -100,6 +101,7 @@ function setupCommands(sdk: FrontendSDK) {
         ignoreAnomalyTypes: settings.ignoreAnomalyTypes,
         customValue: dialogOptions.customValue,
         jsonBodyPath: dialogOptions.jsonBodyPath,
+        cacheBusterParameter: dialogOptions.cacheBusterParameter,
       }),
       sdk
     );
@@ -144,6 +146,7 @@ function setupCommands(sdk: FrontendSDK) {
       attackType: AttackType;
       jsonBodyPath?: string;
       customValue?: string;
+      cacheBusterParameter?: boolean;
     }
   ) {
     const settings = await handleBackendCall(sdk.backend.getSettings(), sdk);
@@ -256,6 +259,7 @@ function setupCommands(sdk: FrontendSDK) {
           handleCommandRun(context, data.attackType, {
             customValue: data.customValue,
             jsonBodyPath: data.jsonBodyPath,
+            cacheBusterParameter: data.cacheBusterParameter,
           });
         },
         jsonBody: parsedRequest?.body,

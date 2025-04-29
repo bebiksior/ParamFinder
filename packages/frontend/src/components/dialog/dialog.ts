@@ -12,6 +12,7 @@ export interface DialogResult {
   attackType?: AttackType;
   customValue?: string;
   jsonBodyPath?: string;
+  cacheBusterParameter?: boolean;
 }
 
 interface DragOffset {
@@ -19,13 +20,15 @@ interface DragOffset {
   y: number;
 }
 
-const CACHE_KEY = 'paramfinder-dialog-cache';
+const CACHE_KEY = "paramfinder-dialog-cache";
 
 export class AdvancedScanDialog {
   private element!: HTMLDivElement;
   private attackTypeSelect!: HTMLSelectElement;
   private customDropdown!: HTMLDivElement;
   private selectedOption!: HTMLDivElement;
+  private cacheBusterCheckbox!: HTMLInputElement;
+  private cacheBusterContainer!: HTMLDivElement;
   private customValueInput!: HTMLInputElement;
   private jsonBodyPathInput!: HTMLInputElement;
   private jsonBodyPathContainer!: HTMLDivElement;
@@ -75,7 +78,7 @@ export class AdvancedScanDialog {
       const cached = localStorage.getItem(CACHE_KEY);
       return cached ? JSON.parse(cached) : null;
     } catch (e) {
-      console.error('Error loading cached dialog values:', e);
+      console.error("Error loading cached dialog values:", e);
       return null;
     }
   }
@@ -84,7 +87,7 @@ export class AdvancedScanDialog {
     try {
       localStorage.setItem(CACHE_KEY, JSON.stringify(values));
     } catch (e) {
-      console.error('Error saving dialog values to cache:', e);
+      console.error("Error saving dialog values to cache:", e);
     }
   }
 
@@ -102,6 +105,10 @@ export class AdvancedScanDialog {
       this.jsonBodyPathInput.value = values.jsonBodyPath;
     }
 
+    if (values.cacheBusterParameter !== undefined && this.cacheBusterCheckbox) {
+      this.cacheBusterCheckbox.checked = values.cacheBusterParameter;
+    }
+
     this.onSelectChange();
   }
 
@@ -110,7 +117,9 @@ export class AdvancedScanDialog {
 
     this.attackTypeSelect.value = attackType;
 
-    const option = this.customDropdown.querySelector(`.custom-option[data-value="${attackType}"]`);
+    const option = this.customDropdown.querySelector(
+      `.custom-option[data-value="${attackType}"]`
+    );
     if (option) {
       this.selectedOption.innerHTML = option.innerHTML;
     }
@@ -156,6 +165,17 @@ export class AdvancedScanDialog {
               </button>
             </div>
             <div class="json-error-message" style="display: none;">Invalid JSON: Unable to parse the JSON body</div>
+          </div>
+
+          <div class="option-group cache-buster-container" style="display: none;">
+            <label class="option-label checkbox-label">
+              <input type="checkbox" id="cache-buster-parameter" class="option-checkbox" />
+              <span>Add cache-buster parameter</span>
+              <div class="tooltip">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-text">Add a random parameter to bypass cache</span>
+              </div>
+            </label>
           </div>
 
           <div class="json-path-selector-container" style="display: none;">
@@ -214,38 +234,62 @@ export class AdvancedScanDialog {
   }
 
   private initializeElements(): void {
-    this.attackTypeSelect = this.element.querySelector(".attack-type-select") as HTMLSelectElement;
-    this.customDropdown = this.element.querySelector(".custom-select") as HTMLDivElement;
-    this.selectedOption = this.element.querySelector(".selected-option") as HTMLDivElement;
-    this.customValueInput = this.element.querySelector("#custom-value") as HTMLInputElement;
-    this.jsonBodyPathInput = this.element.querySelector("#json-body-path") as HTMLInputElement;
-    this.jsonBodyPathContainer = this.element.querySelector(".json-body-path-container") as HTMLDivElement;
-    this.jsonPathSelectorButton = this.element.querySelector(".json-path-selector-button") as HTMLButtonElement;
-    this.jsonPathSelectorContainer = this.element.querySelector(".json-path-selector-container") as HTMLDivElement;
-    this.jsonErrorMessage = this.element.querySelector(".json-error-message") as HTMLDivElement;
+    this.attackTypeSelect = this.element.querySelector(
+      ".attack-type-select"
+    ) as HTMLSelectElement;
+    this.customDropdown = this.element.querySelector(
+      ".custom-select"
+    ) as HTMLDivElement;
+    this.selectedOption = this.element.querySelector(
+      ".selected-option"
+    ) as HTMLDivElement;
+    this.customValueInput = this.element.querySelector(
+      "#custom-value"
+    ) as HTMLInputElement;
+    this.jsonBodyPathInput = this.element.querySelector(
+      "#json-body-path"
+    ) as HTMLInputElement;
+    this.jsonBodyPathContainer = this.element.querySelector(
+      ".json-body-path-container"
+    ) as HTMLDivElement;
+    this.jsonPathSelectorButton = this.element.querySelector(
+      ".json-path-selector-button"
+    ) as HTMLButtonElement;
+    this.jsonPathSelectorContainer = this.element.querySelector(
+      ".json-path-selector-container"
+    ) as HTMLDivElement;
+    this.jsonErrorMessage = this.element.querySelector(
+      ".json-error-message"
+    ) as HTMLDivElement;
+    this.cacheBusterCheckbox = this.element.querySelector(
+      "#cache-buster-parameter"
+    ) as HTMLInputElement;
+    this.cacheBusterContainer = this.element.querySelector(
+      ".cache-buster-container"
+    ) as HTMLDivElement;
 
     if (this.jsonPathSelectorContainer) {
-      this.jsonPathSelectorContainer.style.maxHeight = '0';
-      this.jsonPathSelectorContainer.style.opacity = '0';
+      this.jsonPathSelectorContainer.style.maxHeight = "0";
+      this.jsonPathSelectorContainer.style.opacity = "0";
     }
   }
 
   private validateJson(jsonString: string): boolean {
     try {
-      if (typeof jsonString !== 'string' || jsonString.trim() === '') {
-        throw new Error('Empty or invalid JSON string');
+      if (typeof jsonString !== "string" || jsonString.trim() === "") {
+        throw new Error("Empty or invalid JSON string");
       }
 
       JSON.parse(jsonString);
       this.isValidJson = true;
 
       if (this.jsonErrorMessage) {
-        this.jsonErrorMessage.style.display = 'none';
+        this.jsonErrorMessage.style.display = "none";
       }
 
       if (this.jsonPathSelectorButton) {
         this.jsonPathSelectorButton.disabled = false;
-        this.jsonPathSelectorButton.title = 'Select JSON path';
+        this.jsonPathSelectorButton.title = "Select JSON path";
       }
 
       return true;
@@ -253,13 +297,15 @@ export class AdvancedScanDialog {
       this.isValidJson = false;
 
       if (this.jsonErrorMessage) {
-        this.jsonErrorMessage.style.display = 'block';
-        this.jsonErrorMessage.textContent = `Invalid JSON: ${(error as Error).message}`;
+        this.jsonErrorMessage.style.display = "block";
+        this.jsonErrorMessage.textContent = `Invalid JSON: ${
+          (error as Error).message
+        }`;
       }
 
       if (this.jsonPathSelectorButton) {
         this.jsonPathSelectorButton.disabled = true;
-        this.jsonPathSelectorButton.title = 'Cannot select path: Invalid JSON';
+        this.jsonPathSelectorButton.title = "Cannot select path: Invalid JSON";
       }
 
       return false;
@@ -268,7 +314,10 @@ export class AdvancedScanDialog {
 
   private onSelectChange(): void {
     const isBodyAttack = this.currentAttackType === "body";
+    const isHeadersAttack = this.currentAttackType === "headers";
+
     this.jsonBodyPathContainer.style.display = isBodyAttack ? "flex" : "none";
+    this.cacheBusterContainer.style.display = isHeadersAttack ? "flex" : "none";
 
     if (isBodyAttack) {
       this.jsonBodyPathInput.focus();
@@ -279,10 +328,10 @@ export class AdvancedScanDialog {
       this.jsonBodyPathInput.style.paddingRight = "30px";
 
       if (!this.isValidJson) {
-        this.jsonErrorMessage.style.display = 'block';
+        this.jsonErrorMessage.style.display = "block";
       }
     } else {
-      this.jsonErrorMessage.style.display = 'none';
+      this.jsonErrorMessage.style.display = "none";
     }
   }
 
@@ -375,7 +424,11 @@ export class AdvancedScanDialog {
     return {
       attackType: this.currentAttackType,
       customValue: this.customValueInput.value || undefined,
-      jsonBodyPath: this.jsonBodyPathInput.value || undefined
+      jsonBodyPath: this.jsonBodyPathInput.value || undefined,
+      cacheBusterParameter:
+        this.currentAttackType === "headers"
+          ? this.cacheBusterCheckbox.checked
+          : undefined,
     };
   }
 
@@ -438,9 +491,11 @@ export class AdvancedScanDialog {
 
     if (data.attackType === "body") {
       if (!this.isValidJson) {
-        this.jsonErrorMessage.classList.add('json-error-message-highlight');
+        this.jsonErrorMessage.classList.add("json-error-message-highlight");
         setTimeout(() => {
-          this.jsonErrorMessage.classList.remove('json-error-message-highlight');
+          this.jsonErrorMessage.classList.remove(
+            "json-error-message-highlight"
+          );
         }, 1500);
         return;
       }
@@ -450,10 +505,15 @@ export class AdvancedScanDialog {
       }
     }
 
+    if (data.attackType === "headers") {
+      data.cacheBusterParameter = this.cacheBusterCheckbox.checked;
+    }
+
     this.saveToCache({
       attackType: data.attackType,
       customValue: data.customValue,
-      jsonBodyPath: data.jsonBodyPath
+      jsonBodyPath: data.jsonBodyPath,
+      cacheBusterParameter: data.cacheBusterParameter,
     });
 
     this.toggleJsonPathSelector(false);
@@ -476,9 +536,13 @@ export class AdvancedScanDialog {
       }
     });
 
-    const closeButton = this.jsonPathSelectorContainer.querySelector(".json-path-selector-close");
+    const closeButton = this.jsonPathSelectorContainer.querySelector(
+      ".json-path-selector-close"
+    );
     if (closeButton) {
-      closeButton.addEventListener("click", () => this.toggleJsonPathSelector(false));
+      closeButton.addEventListener("click", () =>
+        this.toggleJsonPathSelector(false)
+      );
     }
 
     if (this.isValidJson) {
@@ -489,27 +553,30 @@ export class AdvancedScanDialog {
   private toggleJsonPathSelector(show: boolean): void {
     if (show && !this.isJsonSelectorVisible) {
       if (!this.isValidJson) {
-        this.jsonErrorMessage.classList.add('json-error-message-highlight');
+        this.jsonErrorMessage.classList.add("json-error-message-highlight");
         setTimeout(() => {
-          this.jsonErrorMessage.classList.remove('json-error-message-highlight');
+          this.jsonErrorMessage.classList.remove(
+            "json-error-message-highlight"
+          );
         }, 1500);
         return;
       }
 
-      this.jsonPathSelectorContainer.style.maxHeight = '0';
-      this.jsonPathSelectorContainer.style.display = 'flex';
-      this.jsonPathSelectorContainer.style.opacity = '0';
+      this.jsonPathSelectorContainer.style.maxHeight = "0";
+      this.jsonPathSelectorContainer.style.display = "flex";
+      this.jsonPathSelectorContainer.style.opacity = "0";
 
       void this.jsonPathSelectorContainer.offsetHeight;
 
-      this.jsonPathSelectorContainer.style.maxHeight = '300px';
-      this.jsonPathSelectorContainer.style.opacity = '1';
+      this.jsonPathSelectorContainer.style.maxHeight = "300px";
+      this.jsonPathSelectorContainer.style.opacity = "1";
       this.isJsonSelectorVisible = true;
 
       setTimeout(() => {
-        const firstLevelExpanders = this.jsonPathSelectorContainer.querySelectorAll(
-          ".json-tree-container > .json-tree-row > .json-tree-key > .json-tree-expander"
-        );
+        const firstLevelExpanders =
+          this.jsonPathSelectorContainer.querySelectorAll(
+            ".json-tree-container > .json-tree-row > .json-tree-key > .json-tree-expander"
+          );
         firstLevelExpanders.forEach((expander) => {
           if (expander.textContent === "▶") {
             (expander as HTMLElement).click();
@@ -517,33 +584,41 @@ export class AdvancedScanDialog {
         });
       }, 50);
     } else if (!show && this.isJsonSelectorVisible) {
-      this.jsonPathSelectorContainer.style.maxHeight = '0';
-      this.jsonPathSelectorContainer.style.opacity = '0';
+      this.jsonPathSelectorContainer.style.maxHeight = "0";
+      this.jsonPathSelectorContainer.style.opacity = "0";
 
       setTimeout(() => {
-        this.jsonPathSelectorContainer.style.display = 'none';
+        this.jsonPathSelectorContainer.style.display = "none";
         this.isJsonSelectorVisible = false;
       }, 200);
     }
   }
   private createJsonTree(): void {
-    const content = this.jsonPathSelectorContainer.querySelector(".json-path-selector-content");
+    const content = this.jsonPathSelectorContainer.querySelector(
+      ".json-path-selector-content"
+    );
     if (!content) return;
 
     try {
       const jsonTree = this.buildJsonTree(this.options.jsonBody);
-      content.innerHTML = '';
+      content.innerHTML = "";
       content.appendChild(jsonTree);
     } catch (error) {
       const errorElement = document.createElement("div");
       errorElement.className = "json-tree-error";
-      errorElement.textContent = `Error parsing JSON: ${(error as Error).message}`;
-      content.textContent = '';
+      errorElement.textContent = `Error parsing JSON: ${
+        (error as Error).message
+      }`;
+      content.textContent = "";
       content.appendChild(errorElement);
     }
   }
 
-  private buildJsonTree(json: any, path: string = "$", level: number = 0): HTMLElement {
+  private buildJsonTree(
+    json: any,
+    path: string = "$",
+    level: number = 0
+  ): HTMLElement {
     const container = document.createElement("div");
     container.className = "json-tree-container";
 
@@ -555,7 +630,9 @@ export class AdvancedScanDialog {
         console.error("Error parsing JSON:", error);
         const errorElement = document.createElement("div");
         errorElement.className = "json-tree-error";
-        errorElement.textContent = `Error parsing JSON: ${(error as Error).message}`;
+        errorElement.textContent = `Error parsing JSON: ${
+          (error as Error).message
+        }`;
         container.appendChild(errorElement);
         return container;
       }
@@ -565,7 +642,7 @@ export class AdvancedScanDialog {
       const isArray = Array.isArray(json);
       const keys = Object.keys(json);
 
-      keys.forEach(key => {
+      keys.forEach((key) => {
         const value = json[key];
         const currentPath = isArray ? `${path}[${key}]` : `${path}.${key}`;
         const row = document.createElement("div");
@@ -578,13 +655,15 @@ export class AdvancedScanDialog {
         keyElement.className = "json-tree-key";
 
         const expanderElement = document.createElement("span");
-        expanderElement.className = isExpandable ? "json-tree-expander" : "json-tree-spacer";
+        expanderElement.className = isExpandable
+          ? "json-tree-expander"
+          : "json-tree-spacer";
         expanderElement.textContent = isExpandable ? "▶" : "";
         keyElement.appendChild(expanderElement);
 
         const keyTextElement = document.createElement("span");
         keyTextElement.className = "json-tree-key-text";
-        const keyText = document.createTextNode(`${key}${isArray ? '' : ':'}`);
+        const keyText = document.createTextNode(`${key}${isArray ? "" : ":"}`);
         keyTextElement.appendChild(keyText);
         keyElement.appendChild(keyTextElement);
 
@@ -601,7 +680,9 @@ export class AdvancedScanDialog {
         rowContent.appendChild(keyElement);
 
         rowContent.addEventListener("click", (e) => {
-          if ((e.target as HTMLElement).classList.contains("json-tree-expander")) {
+          if (
+            (e.target as HTMLElement).classList.contains("json-tree-expander")
+          ) {
             return;
           }
           this.selectJsonPath(currentPath);
@@ -616,7 +697,9 @@ export class AdvancedScanDialog {
 
             const childContainer = row.querySelector(".json-tree-container");
             if (childContainer) {
-              (childContainer as HTMLElement).style.display = isExpanded ? "none" : "block";
+              (childContainer as HTMLElement).style.display = isExpanded
+                ? "none"
+                : "block";
             }
           });
         }
@@ -645,7 +728,11 @@ export class AdvancedScanDialog {
           valueElement.appendChild(valueSpan);
           rowContent.appendChild(valueElement);
         } else {
-          const childContainer = this.buildJsonTree(value, currentPath, level + 1);
+          const childContainer = this.buildJsonTree(
+            value,
+            currentPath,
+            level + 1
+          );
           childContainer.style.display = "none";
           row.appendChild(childContainer);
         }
@@ -694,13 +781,14 @@ export class AdvancedScanDialog {
     try {
       localStorage.removeItem(CACHE_KEY);
     } catch (e) {
-      console.error('Error clearing dialog cache:', e);
+      console.error("Error clearing dialog cache:", e);
     }
   }
 
   private setupInputListeners(): void {
     this.customValueInput.addEventListener('input', this.handleInputChange);
     this.jsonBodyPathInput.addEventListener('input', this.handleInputChange);
+    this.cacheBusterCheckbox.addEventListener('change', this.handleInputChange);
   }
 
   private handleInputChange = (): void => {

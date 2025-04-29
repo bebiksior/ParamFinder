@@ -1,9 +1,9 @@
+import { JSONPath } from "jsonpath-plus";
+import { Parameter, Request, RequestContext } from "shared";
 import { sendRequest } from "../requests/requests";
-import { Request, Parameter, RequestContext } from "shared";
-import { ParamMiner } from "./param-miner";
 import { generateID } from "../util/helper";
 import { autopilotCheckResponse } from "./features/autopilot";
-import { JSONPath } from "jsonpath-plus";
+import { ParamMiner } from "./param-miner";
 
 export class Requester {
   private paramMiner: ParamMiner;
@@ -72,6 +72,9 @@ export class Requester {
 
       case "headers":
         this.handleHeaderParameters(requestCopy, parameters);
+        if (this.paramMiner.config.cacheBusterParameter || this.paramMiner.config.addCacheBusterParameter) {
+          this.handleCacheBusterParameter(requestCopy);
+        }
         break;
 
       case "body":
@@ -106,9 +109,17 @@ export class Requester {
         (p) => `${encodeURIComponent(p.name)}=${encodeURIComponent(p.value)}`
       )
       .join("&");
+
     request.query = request.query
       ? `${request.query}&${queryParams}`
       : queryParams;
+  }
+
+  private handleCacheBusterParameter(request: Request) {
+    const cacheBusterParam = `cb${Date.now()}=${Date.now()}`;
+    request.query = request.query
+      ? `${request.query}&${cacheBusterParam}`
+      : cacheBusterParam;
   }
 
   private handleHeaderParameters(request: Request, parameters: Parameter[]) {

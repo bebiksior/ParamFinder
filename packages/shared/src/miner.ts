@@ -33,10 +33,12 @@ export type ParamMinerConfig = {
   delayBetweenRequests: number;
   concurrency: number;
   performanceMode: boolean;
+  addCacheBusterParameter: boolean;
   wafDetection: boolean;
   additionalChecks: boolean;
   debug: boolean;
   ignoreAnomalyTypes: AnomalyType[];
   customValue?: string;
   jsonBodyPath?: string;
+  cacheBusterParameter?: boolean;
 };

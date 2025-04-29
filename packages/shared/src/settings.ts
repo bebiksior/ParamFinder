@@ -16,4 +16,5 @@ export type Settings = {
   autopilotEnabled: boolean;
   updateContentLength: boolean;
   ignoreAnomalyTypes: AnomalyType[];
+  addCacheBusterParameter: boolean;
 };

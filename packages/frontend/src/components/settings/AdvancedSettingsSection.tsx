@@ -1,22 +1,22 @@
-import {
-  Paper,
-  Typography,
-  Stack,
-  TextField,
-  FormControlLabel,
-  Switch,
-  FormControl,
-  InputLabel,
-  Select,
-  OutlinedInput,
-  Chip,
-  Box,
-  MenuItem,
-  Tooltip,
-} from "@mui/material";
-import { AnomalyType } from "shared";
-import { useCallback } from "react";
 import { useSettings, useUpdateSettingsField } from "@/stores/settingsStore";
+import {
+  Box,
+  Chip,
+  FormControl,
+  FormControlLabel,
+  InputLabel,
+  MenuItem,
+  OutlinedInput,
+  Paper,
+  Select,
+  Stack,
+  Switch,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import { useCallback } from "react";
+import { AnomalyType } from "shared";
 import { EmptyPanel } from "../common/EmptyPanel";
 
 export const AdvancedSettingsSection = () => {
@@ -30,7 +30,7 @@ export const AdvancedSettingsSection = () => {
           [field]: e.target.checked,
         });
       },
-    [settings, updateSettingsField],
+    [settings, updateSettingsField]
   );
 
   const handleAutoDetectMaxSizeChange = useCallback(
@@ -42,7 +42,7 @@ export const AdvancedSettingsSection = () => {
         maxBodySize: e.target.checked ? undefined : settings.maxBodySize,
       });
     },
-    [settings, updateSettingsField],
+    [settings, updateSettingsField]
   );
 
   if (isLoading) return <EmptyPanel message="Loading settings..." />;
@@ -148,6 +148,12 @@ export const AdvancedSettingsSection = () => {
             label: "Performance Mode",
             tooltip:
               "Only receive findings, omit request data to reduce memory usage",
+          },
+          {
+            field: "addCacheBusterParameter" as const,
+            label: "Always Add Cache Buster Parameter",
+            tooltip:
+              "Always add a cache buster parameter to the request for headers attack",
           },
         ].map(({ field, label, tooltip }) => (
           <Box key={field}>
