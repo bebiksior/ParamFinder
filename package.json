@@ -1,7 +1,7 @@
 {
-  "name": "starterkit-plugin",
+  "name": "paramfinder-plugin",
   "version": "0.1.0",
-  "description": "StarterKit plugin for Caido",
+  "description": "ParamFinder plugin for Caido",
   "author": "Caido Labs Inc. <dev@caido.io>",
   "license": "CC0-1.0",
   "type": "module",
