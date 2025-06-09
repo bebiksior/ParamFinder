@@ -136,13 +136,15 @@ export function getSelectedRequest(sdk: FrontendSDK) {
   switch (location.hash) {
     case "#/automate":
     case "#/http-history": {
-      const { innerText: historyRaw } = document.querySelector(
+      const historyRawElement = document.querySelector(
         "[data-language='http-request']"
       ) as HTMLElement;
+
       let historyUrl: string;
-      const historyUrlElement = document.querySelector(
-        ".c-request-header__label"
-      );
+      const historyUrlElement = historyRawElement
+        .closest(".c-card")
+        .querySelector(".c-card__header");
+
       const automateUrlElement = document.querySelector(
         ".c-automate-session-toolbar__connection-info input"
       ) as HTMLInputElement;
@@ -158,7 +160,7 @@ export function getSelectedRequest(sdk: FrontendSDK) {
       const { isTLS, port } = getPortAndTLS(historyUrl);
 
       return {
-        raw: historyRaw,
+        raw: historyRawElement.innerText,
         isTLS,
         port,
         host: getHost(historyUrl),
