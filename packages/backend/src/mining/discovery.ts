@@ -450,8 +450,6 @@ export class ParamDiscovery {
     const parameterChunk: Parameter[] = [];
     let currentSize = 2;
 
-    this.emitDebug(JSON.stringify(this.paramMiner.config));
-
     const remainingWords = wordlist.length - this.lastWordlistIndex;
     let maxChunkSize = remainingWords;
 
