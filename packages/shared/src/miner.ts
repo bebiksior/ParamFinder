@@ -41,4 +41,5 @@ export type ParamMinerConfig = {
   customValue?: string;
   jsonBodyPath?: string;
   cacheBusterParameter?: boolean;
+  maxParametersAmount?: number;
 };

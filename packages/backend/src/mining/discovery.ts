@@ -386,10 +386,14 @@ export class ParamDiscovery {
     wordlist: string[],
     maxSize: number | undefined
   ): Parameter[] {
-    const chunkSize = Math.min(
+    let chunkSize = Math.min(
       maxSize ?? ParamDiscovery.DEFAULT_HEADER_CHUNK_SIZE,
       wordlist.length - this.lastWordlistIndex
     );
+
+    if (this.paramMiner.config.maxParametersAmount) {
+      chunkSize = Math.min(chunkSize, this.paramMiner.config.maxParametersAmount);
+    }
 
     const chunk = wordlist
       .slice(this.lastWordlistIndex, this.lastWordlistIndex + chunkSize)
@@ -409,7 +413,14 @@ export class ParamDiscovery {
     const parameterChunk: Parameter[] = [];
     let currentSize = this.paramMiner.target.url.length;
 
-    while (this.lastWordlistIndex < wordlist.length) {
+    const remainingWords = wordlist.length - this.lastWordlistIndex;
+    let maxChunkSize = remainingWords;
+
+    if (this.paramMiner.config.maxParametersAmount) {
+      maxChunkSize = Math.min(maxChunkSize, this.paramMiner.config.maxParametersAmount);
+    }
+
+    while (this.lastWordlistIndex < wordlist.length && parameterChunk.length < maxChunkSize) {
       const word = wordlist[this.lastWordlistIndex];
       if (!word) {
         this.lastWordlistIndex++;
@@ -439,7 +450,16 @@ export class ParamDiscovery {
     const parameterChunk: Parameter[] = [];
     let currentSize = 2;
 
-    while (this.lastWordlistIndex < wordlist.length) {
+    this.emitDebug(JSON.stringify(this.paramMiner.config));
+
+    const remainingWords = wordlist.length - this.lastWordlistIndex;
+    let maxChunkSize = remainingWords;
+
+    if (this.paramMiner.config.maxParametersAmount) {
+      maxChunkSize = Math.min(maxChunkSize, this.paramMiner.config.maxParametersAmount);
+    }
+
+    while (this.lastWordlistIndex < wordlist.length && parameterChunk.length < maxChunkSize) {
       const word = wordlist[this.lastWordlistIndex];
       if (!word) {
         this.lastWordlistIndex++;

@@ -13,6 +13,7 @@ export interface DialogResult {
   customValue?: string;
   jsonBodyPath?: string;
   cacheBusterParameter?: boolean;
+  maxParametersAmount?: number;
 }
 
 interface DragOffset {
@@ -35,6 +36,7 @@ export class AdvancedScanDialog {
   private jsonPathSelectorButton!: HTMLButtonElement;
   private jsonPathSelectorContainer!: HTMLDivElement;
   private jsonErrorMessage!: HTMLDivElement;
+  private maxParametersAmountInput!: HTMLInputElement;
   private isDragging: boolean = false;
   private dragOffset: DragOffset = { x: 0, y: 0 };
   private readonly options: DialogOptions;
@@ -109,6 +111,10 @@ export class AdvancedScanDialog {
       this.cacheBusterCheckbox.checked = values.cacheBusterParameter;
     }
 
+    if (values.maxParametersAmount && this.maxParametersAmountInput) {
+      this.maxParametersAmountInput.value = values.maxParametersAmount.toString();
+    }
+
     this.onSelectChange();
   }
 
@@ -143,6 +149,17 @@ export class AdvancedScanDialog {
               </div>
             </label>
             <input type="text" id="custom-value" class="option-input" placeholder="Optional custom value" autocomplete="off" />
+          </div>
+
+          <div class="option-group">
+            <label class="option-label" for="max-parameters-amount">
+              Max parameters amount
+              <div class="tooltip">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-text">Maximum number of parameters to test at a time. Leave empty for auto-detection.</span>
+              </div>
+            </label>
+            <input type="number" id="max-parameters-amount" class="option-input" placeholder="Optional (auto-detect)" min="1" autocomplete="off" />
           </div>
 
           <div class="option-group json-body-path-container">
@@ -245,6 +262,9 @@ export class AdvancedScanDialog {
     ) as HTMLDivElement;
     this.customValueInput = this.element.querySelector(
       "#custom-value"
+    ) as HTMLInputElement;
+    this.maxParametersAmountInput = this.element.querySelector(
+      "#max-parameters-amount"
     ) as HTMLInputElement;
     this.jsonBodyPathInput = this.element.querySelector(
       "#json-body-path"
@@ -421,6 +441,9 @@ export class AdvancedScanDialog {
   }
 
   private getCurrentValues(): DialogResult {
+    const maxParametersValue = this.maxParametersAmountInput.value;
+    const maxParametersAmount = maxParametersValue ? parseInt(maxParametersValue, 10) : undefined;
+
     return {
       attackType: this.currentAttackType,
       customValue: this.customValueInput.value || undefined,
@@ -429,6 +452,7 @@ export class AdvancedScanDialog {
         this.currentAttackType === "headers"
           ? this.cacheBusterCheckbox.checked
           : undefined,
+      maxParametersAmount: maxParametersAmount,
     };
   }
 
@@ -489,6 +513,14 @@ export class AdvancedScanDialog {
       customValue: this.customValueInput.value || undefined,
     };
 
+    const maxParametersValue = this.maxParametersAmountInput.value;
+    if (maxParametersValue) {
+      const maxParametersAmount = parseInt(maxParametersValue, 10);
+      if (maxParametersAmount > 0) {
+        data.maxParametersAmount = maxParametersAmount;
+      }
+    }
+
     if (data.attackType === "body") {
       if (!this.isValidJson) {
         this.jsonErrorMessage.classList.add("json-error-message-highlight");
@@ -514,6 +546,7 @@ export class AdvancedScanDialog {
       customValue: data.customValue,
       jsonBodyPath: data.jsonBodyPath,
       cacheBusterParameter: data.cacheBusterParameter,
+      maxParametersAmount: data.maxParametersAmount,
     });
 
     this.toggleJsonPathSelector(false);
@@ -787,6 +820,7 @@ export class AdvancedScanDialog {
 
   private setupInputListeners(): void {
     this.customValueInput.addEventListener('input', this.handleInputChange);
+    this.maxParametersAmountInput.addEventListener('input', this.handleInputChange);
     this.jsonBodyPathInput.addEventListener('input', this.handleInputChange);
     this.cacheBusterCheckbox.addEventListener('change', this.handleInputChange);
   }

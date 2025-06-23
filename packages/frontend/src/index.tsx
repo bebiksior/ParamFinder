@@ -102,6 +102,7 @@ function setupCommands(sdk: FrontendSDK) {
         customValue: dialogOptions.customValue,
         jsonBodyPath: dialogOptions.jsonBodyPath,
         cacheBusterParameter: dialogOptions.cacheBusterParameter,
+        maxParametersAmount: dialogOptions.maxParametersAmount,
       }),
       sdk
     );
@@ -146,6 +147,7 @@ function setupCommands(sdk: FrontendSDK) {
       attackType: AttackType;
       jsonBodyPath?: string;
       customValue?: string;
+      maxParametersAmount?: number;
       cacheBusterParameter?: boolean;
     }
   ) {
@@ -260,6 +262,7 @@ function setupCommands(sdk: FrontendSDK) {
             customValue: data.customValue,
             jsonBodyPath: data.jsonBodyPath,
             cacheBusterParameter: data.cacheBusterParameter,
+            maxParametersAmount: data.maxParametersAmount,
           });
         },
         jsonBody: parsedRequest?.body,
