@@ -169,7 +169,7 @@ export function getSelectedRequest(sdk: FrontendSDK) {
 
     case "#/replay": {
       const { value: replayUrl } = document.querySelector(
-        ".c-replay-session-toolbar__connection-info input"
+        "[placeholder='Enter a connection URL']"
       ) as HTMLInputElement;
 
       const { innerText: replayRaw } = document.querySelector(
