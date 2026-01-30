@@ -5,7 +5,7 @@
   "description": "Discover hidden parameters.",
   "author": {
     "name": "bebiks",
-    "email": "bebiks@cvssadvisor.com",
+    "email": "lukasz@caido.io",
     "url": "https://github.com/bebiksior/ParamFinder"
   },
   "plugins": [
